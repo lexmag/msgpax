@@ -1,3 +1,5 @@
+Code.require_file "../test_helper.exs", __FILE__
+
 defmodule MessagePack.BitStringTest do
   use ExUnit.Case, async: true
   use MessagePack
