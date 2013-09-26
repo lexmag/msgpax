@@ -1,4 +1,6 @@
 defprotocol MessagePack.Serlialization do
+  @only [Atom, BitString, List, Number]
+  
   def process(term)
 end
 
