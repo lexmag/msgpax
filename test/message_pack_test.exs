@@ -1,8 +1,7 @@
 Code.require_file "../test_helper.exs", __FILE__
 
 defmodule MessagePack.BitStringTest do
-  use ExUnit.Case, async: true
-  use MessagePack
+  use MessagePack.Case
 
   test "fixstring" do
     assert pack?("", <<160>>)
@@ -35,8 +34,7 @@ defmodule MessagePack.BitStringTest do
 end
 
 defmodule MessagePack.ListTest do
-  use ExUnit.Case, async: true
-  use MessagePack
+  use MessagePack.Case
 
   test "fixarray" do
     assert pack?([], <<144>>)
@@ -81,8 +79,7 @@ defmodule MessagePack.ListTest do
 end
 
 defmodule MessagePack.AtomTest do
-  use ExUnit.Case, async: true
-  use MessagePack
+  use MessagePack.Case
 
   test "nil" do
     assert pack(nil) == <<192>>
@@ -98,8 +95,7 @@ defmodule MessagePack.AtomTest do
 end
 
 defmodule MessagePack.NumberTest do
-  use ExUnit.Case, async: true
-  use MessagePack
+  use MessagePack.Case
 
   test "float" do
     assert pack(42.0) == <<203, 64, 69, 0, 0, 0, 0, 0, 0>>
