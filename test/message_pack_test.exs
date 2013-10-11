@@ -51,8 +51,8 @@ defmodule MessagePack.ListTest do
   end
 
   test "fixmap" do
-    assert pack([{}]) == <<144>>
-    assert pack?(List.duplicate({ 0, 1 }, 15), <<159>>)
+    assert pack([{}]) == <<128>>
+    assert pack?(List.duplicate({ 0, 1 }, 15), <<143>>)
   end
 
   test "map 16" do

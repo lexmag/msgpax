@@ -43,7 +43,7 @@ defimpl MessagePack.Serlialization, for: List do
   def process([{}]), do: pack_map([])
 
   def process(l) when length(l) < 16 do
-    <<9 :: 4, length(l) :: 4, array_elements(l) :: binary>>
+    <<0b1001 :: 4, length(l) :: 4, array_elements(l) :: binary>>
   end
 
   def process(l) when length(l) < 65536 do
@@ -55,11 +55,11 @@ defimpl MessagePack.Serlialization, for: List do
   end
 
   defp array_elements(array) do
-    bc el inlist array, do: <<to_msgpack(el) :: binary>>
+    bc elem inlist array, do: <<to_msgpack(elem) :: binary>>
   end
 
   defp pack_map(m) when length(m) < 16 do
-    <<9 :: 4, length(m) :: 4, map_elements(m) :: binary>>
+    <<0b1000 :: 4, length(m) :: 4, map_elements(m) :: binary>>
   end
 
   defp pack_map(m) when length(m) < 65536 do
