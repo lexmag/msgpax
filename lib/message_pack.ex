@@ -4,6 +4,6 @@ defmodule MessagePack do
   end
 
   def pack(term) do
-    __MODULE__.Serlialization.process(term)
+    __MODULE__.Serializer.process(term)
   end
 end

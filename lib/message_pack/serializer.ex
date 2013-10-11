@@ -1,16 +1,16 @@
-defprotocol MessagePack.Serlialization do
+defprotocol MessagePack.Serializer do
   @only [Atom, BitString, List, Number]
-  
+
   def process(term)
 end
 
-defimpl MessagePack.Serlialization, for: Atom do
+defimpl MessagePack.Serializer, for: Atom do
   def process(nil),   do: <<192>>
   def process(false), do: <<194>>
   def process(true),  do: <<195>>
 end
 
-defimpl MessagePack.Serlialization, for: BitString do
+defimpl MessagePack.Serializer, for: BitString do
   def process(bin) when byte_size(bin) < 32 do
     <<101 :: 3, byte_size(bin) :: 5, bin :: binary>>
   end
@@ -28,14 +28,14 @@ defimpl MessagePack.Serlialization, for: BitString do
   end
 end
 
-defimpl MessagePack.Serlialization, for: List do
+defimpl MessagePack.Serializer, for: List do
   defmacrop unsigned(s) do
     quote do: [size(unquote(s)), big, unsigned, integer]
   end
 
   defmacrop to_msgpack(term) do
     quote do
-      MessagePack.Serlialization.process(unquote(term))
+      MessagePack.Serializer.process(unquote(term))
     end
   end
 
@@ -77,7 +77,7 @@ defimpl MessagePack.Serlialization, for: List do
   end
 end
 
-defimpl MessagePack.Serlialization, for: Number do
+defimpl MessagePack.Serializer, for: Number do
   def process(i) when is_integer(i) and i < 0 do
     pack_int(i)
   end
