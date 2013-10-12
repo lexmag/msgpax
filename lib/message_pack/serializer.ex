@@ -12,7 +12,7 @@ end
 
 defimpl MessagePack.Serializer, for: BitString do
   def process(bin) when byte_size(bin) < 32 do
-    <<101 :: 3, byte_size(bin) :: 5, bin :: binary>>
+    <<0b101 :: 3, byte_size(bin) :: 5, bin :: binary>>
   end
 
   def process(bin) when byte_size(bin) < 256 do
@@ -39,90 +39,90 @@ defimpl MessagePack.Serializer, for: List do
     end
   end
 
-  def process([{_, _} | _] = map), do: pack_map(map)
-  def process([{}]), do: pack_map([])
+  def process([{_, _} | _] = list), do: as_map(list)
+  def process([{}]), do: as_map([])
 
-  def process(l) when length(l) < 16 do
-    <<0b1001 :: 4, length(l) :: 4, array_elements(l) :: binary>>
+  def process(list) when length(list) < 16 do
+    <<0b1001 :: 4, length(list) :: 4, array_elements(list) :: binary>>
   end
 
-  def process(l) when length(l) < 65536 do
-    <<220, length(l) :: unsigned(16), array_elements(l) :: binary>>
+  def process(list) when length(list) < 65536 do
+    <<220, length(list) :: unsigned(16), array_elements(list) :: binary>>
   end
 
-  def process(l) do
-    <<221, length(l) :: unsigned(32), array_elements(l) :: binary>>
+  def process(list) do
+    <<221, length(list) :: unsigned(32), array_elements(list) :: binary>>
   end
 
-  defp array_elements(array) do
-    bc elem inlist array, do: <<to_msgpack(elem) :: binary>>
+  defp array_elements(list) do
+    bc elem inlist list, do: <<to_msgpack(elem) :: binary>>
   end
 
-  defp pack_map(m) when length(m) < 16 do
-    <<0b1000 :: 4, length(m) :: 4, map_elements(m) :: binary>>
+  defp as_map(list) when length(list) < 16 do
+    <<0b1000 :: 4, length(list) :: 4, map_elements(list) :: binary>>
   end
 
-  defp pack_map(m) when length(m) < 65536 do
-    <<222, length(m) :: unsigned(16), map_elements(m) :: binary>>
+  defp as_map(list) when length(list) < 65536 do
+    <<222, length(list) :: unsigned(16), map_elements(list) :: binary>>
   end
 
-  defp pack_map(m) do
-    <<223, length(m) :: unsigned(32), map_elements(m) :: binary>>
+  defp as_map(list) do
+    <<223, length(list) :: unsigned(32), map_elements(list) :: binary>>
   end
 
-  defp map_elements(map) do
-    bc { key, value } inlist map do
+  defp map_elements(list) do
+    bc { key, value } inlist list do
       <<to_msgpack(key) :: binary, to_msgpack(value) :: binary>>
     end
   end
 end
 
 defimpl MessagePack.Serializer, for: Number do
-  def process(i) when is_integer(i) and i < 0 do
-    pack_int(i)
+  def process(num) when is_integer(num) and num < 0 do
+    as_int(num)
   end
 
-  def process(i) when is_integer(i) do
-    pack_uint(i)
+  def process(num) when is_integer(num) do
+    as_uint(num)
   end
 
-  def process(f) when is_float(f) do
-    <<203, f :: [size(64), big, float]>>
+  def process(num) when is_float(num) do
+    <<203, num :: [size(64), big, float]>>
   end
 
-  defp pack_int(int) when int >= -32 do
-    <<111 :: 3, int :: 5>>
+  defp as_int(num) when num >= -32 do
+    <<111 :: 3, num :: 5>>
   end
 
-  defp pack_int(int) when int >= -128 do
-    <<208, int>>
+  defp as_int(num) when num >= -128 do
+    <<208, num>>
   end
 
-  defp pack_int(int) when int >= -32768 do
-    <<209, int :: 16>>
+  defp as_int(num) when num >= -32768 do
+    <<209, num :: 16>>
   end
 
-  defp pack_int(int) when int >= -2147483648 do
-    <<210, int :: 32>>
+  defp as_int(num) when num >= -2147483648 do
+    <<210, num :: 32>>
   end
 
-  defp pack_int(int), do: <<211, int :: 64>>
+  defp as_int(num), do: <<211, num :: 64>>
 
-  defp pack_uint(int) when int < 128 do
-    <<0 :: 1, int :: 7>>
+  defp as_uint(num) when num < 128 do
+    <<0 :: 1, num :: 7>>
   end
 
-  defp pack_uint(int) when int < 256 do
-    <<204, int>>
+  defp as_uint(num) when num < 256 do
+    <<204, num>>
   end
 
-  defp pack_uint(int) when int < 65536 do
-    <<205, int :: 16>>
+  defp as_uint(num) when num < 65536 do
+    <<205, num :: 16>>
   end
 
-  defp pack_uint(int) when int < 4294967296 do
-    <<206, int :: 32>>
+  defp as_uint(num) when num < 4294967296 do
+    <<206, num :: 32>>
   end
 
-  defp pack_uint(int), do: <<207, int :: 64>>
+  defp as_uint(num), do: <<207, num :: 64>>
 end
