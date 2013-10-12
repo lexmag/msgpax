@@ -3,79 +3,90 @@ Code.require_file "../test_helper.exs", __FILE__
 defmodule MessagePack.BitStringTest do
   use MessagePack.Case
 
+  defmacrop assert_pack(string, spec) do
+    quote do
+      assert pack(unquote(string)) == <<unquote(spec), unquote(string) :: binary>>
+    end
+  end
+
   test "fixstring" do
-    assert pack?("", <<160>>)
-    assert pack?(String.duplicate("abcdef", 5) <> "z", <<191>>)
+    assert pack("") == <<160>>
+    assert_pack string(31), <<191>>
   end
 
   test "string 8" do
-    assert pack?(String.duplicate("abcdef", 5) <> "zz", <<217, 32>>)
-    assert pack?(String.duplicate("abcde", 51), <<217, 255>>)
+    assert_pack string(32), <<217, 32>>
+    assert_pack string(255), <<217, 255>>
   end
 
   test "string 16" do
-    assert pack?(String.duplicate("abcde", 51) <> "z", <<218, 1, 0>>)
-    assert pack?(String.duplicate("abcde", 13107), <<218, 255, 255>>)
+    assert_pack string(256), <<218, 1, 0>>
+    assert_pack string(65535), <<218, 255, 255>>
   end
 
   test "string 32" do
-    assert pack?(String.duplicate("abcde", 13107) <> "z", <<219, 0, 1, 0, 0>>)
+    assert_pack string(65536), <<219, 0, 1, 0, 0>>
   end
 
   test "bitsring" do
     assert_raise ArgumentError, "argument error", fn ->
-      pack(<<1 :: 3>>)
+      pack(<<7 :: 3>>)
     end
   end
 
-  defp pack?(string, pattern) do
-    pack(string) == iolist_to_binary([pattern, string])
-  end
+  defp string(len), do: String.duplicate("X", len)
 end
 
 defmodule MessagePack.ListTest do
   use MessagePack.Case
 
+  defmacrop assert_pack(list, spec) do
+    quote do
+      assert pack(unquote(list)) == <<unquote(spec), to_msgpack(unquote(list)) :: binary>>
+    end
+  end
+
+  defp to_msgpack([{_, _} | _] = list) do
+    bc { key, value } inlist list do
+      <<pack(key) :: binary, pack(value) :: binary>>
+    end
+  end
+
+  defp to_msgpack(list) do
+    bc elem inlist list, do: <<pack(elem) :: binary>>
+  end
+
   test "fixarray" do
-    assert pack?([], <<144>>)
-    assert pack?(List.duplicate(1, 15), <<159>>)
+    assert pack([]) == <<144>>
+    assert_pack(array(15), <<159>>)
   end
 
   test "array 16" do
-    assert pack?(List.duplicate(1, 16), <<220, 0, 16>>)
-    assert pack?(List.duplicate(1, 65535), <<220, 255, 255>>)
+    assert_pack(array(16), <<220, 0, 16>>)
+    assert_pack(array(65535), <<220, 255, 255>>)
   end
 
   test "array 32" do
-    assert pack?(List.duplicate(1, 65536), <<221, 0, 1, 0, 0>>)
+    assert_pack(array(65536), <<221, 0, 1, 0, 0>>)
   end
 
   test "fixmap" do
     assert pack([{}]) == <<128>>
-    assert pack?(List.duplicate({ 0, 1 }, 15), <<143>>)
+    assert_pack(map(15), <<143>>)
   end
 
   test "map 16" do
-    assert pack?(List.duplicate({ 0, 1 }, 16), <<222, 0, 16>>)
-    assert pack?(List.duplicate({ 0, 1 }, 65535), <<222, 255, 255>>)
+    assert_pack(map(16), <<222, 0, 16>>)
+    assert_pack(map(65535), <<222, 255, 255>>)
   end
 
   test "map 32" do
-    assert pack?(List.duplicate({ 0, 1} , 65536), <<223, 0, 1, 0, 0>>)
+    assert_pack(map(65536), <<223, 0, 1, 0, 0>>)
   end
 
-  defp pack?(list, pattern) do
-    pack(list) == iolist_to_binary([pattern, flatten(list)])
-  end
+  defp map(len), do: List.duplicate({ "X", -32 }, len)
 
-  defp flatten(list) do
-    case list do
-      [{_, _} | _] ->
-        Enum.map list, fn({k, v}) -> [k, v] end
-
-      _ -> list
-    end
-  end
+  defp array(len), do: List.duplicate(255, len)
 end
 
 defmodule MessagePack.AtomTest do
