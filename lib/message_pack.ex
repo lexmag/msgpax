@@ -6,4 +6,8 @@ defmodule MessagePack do
   def pack(term) do
     __MODULE__.Serializer.process(term)
   end
+
+  def unpack(bin) do
+    __MODULE__.Deserializer.process(bin)
+  end
 end

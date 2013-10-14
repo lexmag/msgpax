@@ -34,8 +34,6 @@ defmodule MessagePack.SerializerSuite do
         pack(<<7 :: 3>>)
       end
     end
-
-    defp string(len), do: String.duplicate("X", len)
   end
 
   defmodule ListTest do
@@ -84,10 +82,6 @@ defmodule MessagePack.SerializerSuite do
     test "map 32" do
       assert_pack(map(65536), <<223, 0, 1, 0, 0>>)
     end
-
-    defp map(len), do: List.duplicate({ "X", -32 }, len)
-
-    defp array(len), do: List.duplicate(255, len)
   end
 
   defmodule AtomTest do
