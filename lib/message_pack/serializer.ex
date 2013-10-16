@@ -91,7 +91,7 @@ defimpl MessagePack.Serializer, for: Number do
   end
 
   defp as_int(num) when num >= -32 do
-    <<111 :: 3, num :: 5>>
+    <<0b111 :: 3, num :: 5>>
   end
 
   defp as_int(num) when num >= -128 do
