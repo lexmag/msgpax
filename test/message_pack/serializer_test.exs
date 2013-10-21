@@ -4,29 +4,29 @@ defmodule MessagePack.SerializerSuite do
   defmodule BitStringTest do
     use MessagePack.Case
 
-    defmacrop assert_pack(string, spec) do
+    defmacrop assert_pack(string, prefix) do
       quote do
-        assert pack(unquote(string)) == <<unquote(spec), unquote(string) :: binary>>
+        assert pack(unquote(string)) == <<unquote_splicing(prefix), unquote(string) :: binary>>
       end
     end
 
     test "fixstring" do
       assert pack("") == <<160>>
-      assert_pack string(31), <<191>>
+      assert_pack string(31), [191]
     end
 
     test "string 8" do
-      assert_pack string(32), <<217, 32>>
-      assert_pack string(255), <<217, 255>>
+      assert_pack string(32), [217, 32]
+      assert_pack string(255), [217, 255]
     end
 
     test "string 16" do
-      assert_pack string(256), <<218, 1, 0>>
-      assert_pack string(65535), <<218, 255, 255>>
+      assert_pack string(256), [218, 1, 0]
+      assert_pack string(65535), [218, 255, 255]
     end
 
     test "string 32" do
-      assert_pack string(65536), <<219, 0, 1, 0, 0>>
+      assert_pack string(65536), [219, 0, 1, 0, 0]
     end
 
     test "bitsring" do
@@ -39,9 +39,9 @@ defmodule MessagePack.SerializerSuite do
   defmodule ListTest do
     use MessagePack.Case
 
-    defmacrop assert_pack(list, spec) do
+    defmacrop assert_pack(list, prefix) do
       quote do
-        assert pack(unquote(list)) == <<unquote(spec), to_msgpack(unquote(list)) :: binary>>
+        assert pack(unquote(list)) == <<unquote_splicing(prefix), to_msgpack(unquote(list)) :: binary>>
       end
     end
 
@@ -57,30 +57,30 @@ defmodule MessagePack.SerializerSuite do
 
     test "fixarray" do
       assert pack([]) == <<144>>
-      assert_pack(array(15), <<159>>)
+      assert_pack array(15), [159]
     end
 
     test "array 16" do
-      assert_pack(array(16), <<220, 0, 16>>)
-      assert_pack(array(65535), <<220, 255, 255>>)
+      assert_pack array(16), [220, 0, 16]
+      assert_pack array(65535), [220, 255, 255]
     end
 
     test "array 32" do
-      assert_pack(array(65536), <<221, 0, 1, 0, 0>>)
+      assert_pack array(65536), [221, 0, 1, 0, 0]
     end
 
     test "fixmap" do
       assert pack([{}]) == <<128>>
-      assert_pack(map(15), <<143>>)
+      assert_pack map(15), [143]
     end
 
     test "map 16" do
-      assert_pack(map(16), <<222, 0, 16>>)
-      assert_pack(map(65535), <<222, 255, 255>>)
+      assert_pack map(16), [222, 0, 16]
+      assert_pack map(65535), [222, 255, 255]
     end
 
     test "map 32" do
-      assert_pack(map(65536), <<223, 0, 1, 0, 0>>)
+      assert_pack map(65536), [223, 0, 1, 0, 0]
     end
   end
 
@@ -104,7 +104,7 @@ defmodule MessagePack.SerializerSuite do
     use MessagePack.Case
 
     test "float" do
-      assert pack(42.0) == <<203, 64, 69, 0, 0, 0, 0, 0, 0>>
+      assert pack(42.1) == <<203, 64, 69, 12, 204, 204, 204, 204, 205>>
     end
 
     test "positive fixint" do

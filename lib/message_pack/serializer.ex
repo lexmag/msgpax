@@ -5,9 +5,9 @@ defprotocol MessagePack.Serializer do
 end
 
 defimpl MessagePack.Serializer, for: Atom do
-  def process(nil),   do: <<192>>
-  def process(false), do: <<194>>
-  def process(true),  do: <<195>>
+  def process(nil),   do: <<0xC0>>
+  def process(false), do: <<0xC2>>
+  def process(true),  do: <<0xC3>>
 end
 
 defimpl MessagePack.Serializer, for: BitString do
@@ -16,15 +16,15 @@ defimpl MessagePack.Serializer, for: BitString do
   end
 
   def process(bin) when byte_size(bin) < 256 do
-    <<217, byte_size(bin) :: 8, bin :: binary>>
+    <<0xD9, byte_size(bin) :: 8, bin :: binary>>
   end
 
   def process(bin) when byte_size(bin) < 65536 do
-    <<218, byte_size(bin) :: [size(16), big, unsigned, integer], bin :: binary>>
+    <<0xDA, byte_size(bin) :: [size(16), big, unsigned, integer], bin :: binary>>
   end
 
   def process(bin) do
-    <<219, byte_size(bin) :: [size(32), big, unsigned, integer], bin :: binary>>
+    <<0xDB, byte_size(bin) :: [size(32), big, unsigned, integer], bin :: binary>>
   end
 end
 
@@ -40,37 +40,37 @@ defimpl MessagePack.Serializer, for: List do
   end
 
   def process([{_, _} | _] = list), do: as_map(list)
-  def process([{}]), do: as_map([])
+  def process([{}]),                do: as_map([])
 
   def process(list) when length(list) < 16 do
-    <<0b1001 :: 4, length(list) :: 4, array_elements(list) :: binary>>
+    <<0b1001 :: 4, length(list) :: 4, array_terms(list) :: binary>>
   end
 
   def process(list) when length(list) < 65536 do
-    <<220, length(list) :: unsigned(16), array_elements(list) :: binary>>
+    <<0xDC, length(list) :: unsigned(16), array_terms(list) :: binary>>
   end
 
   def process(list) do
-    <<221, length(list) :: unsigned(32), array_elements(list) :: binary>>
+    <<0xDD, length(list) :: unsigned(32), array_terms(list) :: binary>>
   end
 
-  defp array_elements(list) do
-    bc elem inlist list, do: <<to_msgpack(elem) :: binary>>
+  defp array_terms(list) do
+    bc term inlist list, do: <<to_msgpack(term) :: binary>>
   end
 
   defp as_map(list) when length(list) < 16 do
-    <<0b1000 :: 4, length(list) :: 4, map_elements(list) :: binary>>
+    <<0b1000 :: 4, length(list) :: 4, map_terms(list) :: binary>>
   end
 
   defp as_map(list) when length(list) < 65536 do
-    <<222, length(list) :: unsigned(16), map_elements(list) :: binary>>
+    <<0xDE, length(list) :: unsigned(16), map_terms(list) :: binary>>
   end
 
   defp as_map(list) do
-    <<223, length(list) :: unsigned(32), map_elements(list) :: binary>>
+    <<0xDF, length(list) :: unsigned(32), map_terms(list) :: binary>>
   end
 
-  defp map_elements(list) do
+  defp map_terms(list) do
     bc { key, value } inlist list do
       <<to_msgpack(key) :: binary, to_msgpack(value) :: binary>>
     end
@@ -87,7 +87,7 @@ defimpl MessagePack.Serializer, for: Number do
   end
 
   def process(num) when is_float(num) do
-    <<203, num :: [size(64), big, float]>>
+    <<0xCB, num :: [size(64), big, float]>>
   end
 
   defp as_int(num) when num >= -32 do
@@ -95,34 +95,34 @@ defimpl MessagePack.Serializer, for: Number do
   end
 
   defp as_int(num) when num >= -128 do
-    <<208, num>>
+    <<0xD0, num>>
   end
 
   defp as_int(num) when num >= -32768 do
-    <<209, num :: 16>>
+    <<0xD1, num :: 16>>
   end
 
   defp as_int(num) when num >= -2147483648 do
-    <<210, num :: 32>>
+    <<0xD2, num :: 32>>
   end
 
-  defp as_int(num), do: <<211, num :: 64>>
+  defp as_int(num), do: <<0xD3, num :: 64>>
 
   defp as_uint(num) when num < 128 do
     <<0 :: 1, num :: 7>>
   end
 
   defp as_uint(num) when num < 256 do
-    <<204, num>>
+    <<0xCC, num>>
   end
 
   defp as_uint(num) when num < 65536 do
-    <<205, num :: 16>>
+    <<0xCD, num :: 16>>
   end
 
   defp as_uint(num) when num < 4294967296 do
-    <<206, num :: 32>>
+    <<0xCE, num :: 32>>
   end
 
-  defp as_uint(num), do: <<207, num :: 64>>
+  defp as_uint(num), do: <<0xCF, num :: 64>>
 end
