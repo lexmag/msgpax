@@ -41,17 +41,17 @@ defmodule MessagePack.DeserializerSuite do
 
     defmacrop assert_unpack(prefix, value) do
       quote do
-        assert unpack(<<unquote_splicing(prefix), to_msgpack(unquote(value)) :: binary>>) == unquote(value)
+        assert unpack(<<unquote_splicing(prefix), do_pack(unquote(value)) :: binary>>) == unquote(value)
       end
     end
 
-    defp to_msgpack([{_, _} | _] = list) do
+    defp do_pack([{_, _} | _] = list) do
       bc { key, value } inlist list do
         <<pack(key) :: binary, pack(value) :: binary>>
       end
     end
 
-    defp to_msgpack(list) do
+    defp do_pack(list) do
       bc term inlist list, do: <<pack(term) :: binary>>
     end
 

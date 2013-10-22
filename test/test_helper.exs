@@ -4,7 +4,8 @@ defmodule MessagePack.Case do
   defmacro __using__(_) do
     quote do
       use ExUnit.Case, async: true
-      use MessagePack
+
+      import MessagePack, only: :functions
 
       defp string(len), do: String.duplicate("X", len)
 

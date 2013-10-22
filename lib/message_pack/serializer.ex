@@ -29,14 +29,10 @@ defimpl MessagePack.Serializer, for: BitString do
 end
 
 defimpl MessagePack.Serializer, for: List do
+  import MessagePack, only: [to_msgpack: 1]
+
   defmacrop unsigned(s) do
     quote do: [size(unquote(s)), big, unsigned, integer]
-  end
-
-  defmacrop to_msgpack(term) do
-    quote do
-      MessagePack.Serializer.process(unquote(term))
-    end
   end
 
   def process([{_, _} | _] = list), do: as_map(list)
