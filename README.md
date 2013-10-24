@@ -17,9 +17,9 @@ And run the `mix deps.get` command to fetch and compile the dependencies.
 ## Usage
 
 ```iex
-iex(1)> squad = MessagePack.pack([300, "Spartans"])
+iex> squad = MessagePack.pack([300, "Spartans"])
 <<146, 205, 1, 44, 168, 83, 112, 97, 114, 116, 97, 110, 115>>
-iex(2)> MessagePack.unpack(squad)
+iex> MessagePack.unpack(squad)
 [300, "Spartans"]
 ```
 
