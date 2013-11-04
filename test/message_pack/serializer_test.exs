@@ -100,12 +100,16 @@ defmodule MessagePack.SerializerSuite do
     end
   end
 
-  defmodule NumberTest do
+  defmodule FloatTest do
     use MessagePack.Case
 
     test "float" do
       assert pack(42.1) == <<203, 64, 69, 12, 204, 204, 204, 204, 205>>
     end
+  end
+
+  defmodule IntegerTest do
+    use MessagePack.Case
 
     test "positive fixint" do
       assert pack(0) == <<0>>

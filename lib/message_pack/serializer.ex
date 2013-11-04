@@ -1,6 +1,4 @@
 defprotocol MessagePack.Serializer do
-  @only [Atom, BitString, List, Number]
-
   def process(term)
 end
 
@@ -73,18 +71,18 @@ defimpl MessagePack.Serializer, for: List do
   end
 end
 
-defimpl MessagePack.Serializer, for: Number do
-  def process(num) when is_integer(num) and num < 0 do
+defimpl MessagePack.Serializer, for: Float do
+  def process(num) do
+    <<0xCB, num :: [size(64), big, float]>>
+  end
+end
+
+defimpl MessagePack.Serializer, for: Integer do
+  def process(num) when num < 0 do
     as_int(num)
   end
 
-  def process(num) when is_integer(num) do
-    as_uint(num)
-  end
-
-  def process(num) when is_float(num) do
-    <<0xCB, num :: [size(64), big, float]>>
-  end
+  def process(num), do: as_uint(num)
 
   defp as_int(num) when num >= -32 do
     <<0b111 :: 3, num :: 5>>

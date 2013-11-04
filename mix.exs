@@ -4,7 +4,7 @@ defmodule MessagePack.Mixfile do
   def project do
     [ app: :message_pack,
       version: "0.1.0",
-      elixir: "~> 0.10.1",
+      elixir: "~> 0.11.0",
       deps: deps ]
   end
 

@@ -100,7 +100,7 @@ defmodule MessagePack.DeserializerSuite do
     end
   end
 
-  defmodule NumberTest do
+  defmodule FloatTest do
     use MessagePack.Case
 
     test "float 32" do
@@ -110,6 +110,10 @@ defmodule MessagePack.DeserializerSuite do
     test "float 64" do
       assert unpack(<<203, 64, 69, 12, 204, 204, 204, 204, 205>>) == 42.1
     end
+  end
+
+  defmodule IntegerTest do
+    use MessagePack.Case
 
     test "positive fixint" do
       assert unpack(<<0>>) == 0
