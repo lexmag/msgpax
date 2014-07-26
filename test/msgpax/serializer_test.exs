@@ -1,8 +1,8 @@
 Code.require_file "../test_helper.exs", __DIR__
 
-defmodule MessagePack.SerializerSuite do
+defmodule Msgpax.SerializerSuite do
   defmodule BitStringTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     defmacrop assert_pack(string, prefix) do
       quote do
@@ -37,7 +37,7 @@ defmodule MessagePack.SerializerSuite do
   end
 
   defmodule ListTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     defmacrop assert_pack(list, prefix) do
       quote do
@@ -85,7 +85,7 @@ defmodule MessagePack.SerializerSuite do
   end
 
   defmodule AtomTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     test "nil" do
       assert pack(nil) == <<192>>
@@ -101,7 +101,7 @@ defmodule MessagePack.SerializerSuite do
   end
 
   defmodule FloatTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     test "float" do
       assert pack(42.1) == <<203, 64, 69, 12, 204, 204, 204, 204, 205>>
@@ -109,7 +109,7 @@ defmodule MessagePack.SerializerSuite do
   end
 
   defmodule IntegerTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     test "positive fixint" do
       assert pack(0) == <<0>>

@@ -1,8 +1,8 @@
-defmodule MessagePack.Mixfile do
+defmodule Msgpax.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :message_pack,
+    [app: :msgpax,
      version: "0.2.0",
      elixir: "~> 0.11"]
   end

@@ -1,11 +1,11 @@
 ExUnit.start
 
-defmodule MessagePack.Case do
+defmodule Msgpax.Case do
   defmacro __using__(_) do
     quote do
       use ExUnit.Case, async: true
 
-      import MessagePack, only: :functions
+      import Msgpax, only: :functions
 
       defp string(len), do: String.duplicate("X", len)
 

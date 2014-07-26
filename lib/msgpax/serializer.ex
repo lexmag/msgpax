@@ -1,14 +1,14 @@
-defprotocol MessagePack.Serializer do
+defprotocol Msgpax.Serializer do
   def process(term)
 end
 
-defimpl MessagePack.Serializer, for: Atom do
+defimpl Msgpax.Serializer, for: Atom do
   def process(nil),   do: <<0xC0>>
   def process(false), do: <<0xC2>>
   def process(true),  do: <<0xC3>>
 end
 
-defimpl MessagePack.Serializer, for: BitString do
+defimpl Msgpax.Serializer, for: BitString do
   def process(bin) when byte_size(bin) < 32 do
     <<0b101 :: 3, byte_size(bin) :: 5, bin :: binary>>
   end
@@ -26,8 +26,8 @@ defimpl MessagePack.Serializer, for: BitString do
   end
 end
 
-defimpl MessagePack.Serializer, for: List do
-  import MessagePack, only: [to_msgpack: 1]
+defimpl Msgpax.Serializer, for: List do
+  import Msgpax, only: [to_msgpack: 1]
 
   defmacrop unsigned(s) do
     quote do: [size(unquote(s)), big, unsigned, integer]
@@ -71,13 +71,13 @@ defimpl MessagePack.Serializer, for: List do
   end
 end
 
-defimpl MessagePack.Serializer, for: Float do
+defimpl Msgpax.Serializer, for: Float do
   def process(num) do
     <<0xCB, num :: [size(64), big, float]>>
   end
 end
 
-defimpl MessagePack.Serializer, for: Integer do
+defimpl Msgpax.Serializer, for: Integer do
   def process(num) when num < 0 do
     as_int(num)
   end

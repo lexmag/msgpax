@@ -1,4 +1,4 @@
-defmodule MessagePack.Deserializer.DSL do
+defmodule Msgpax.Deserializer.DSL do
   defmacro defmatch(format, do: block) do
     def_match format, quote(do: rest |> unquote(block))
   end
@@ -16,10 +16,10 @@ defmodule MessagePack.Deserializer.DSL do
   end
 end
 
-defmodule MessagePack.Deserializer do
+defmodule Msgpax.Deserializer do
   defexception Error, message: "Invalid byte sequence"
 
-  import MessagePack.Deserializer.DSL, only: :macros
+  import Msgpax.Deserializer.DSL, only: :macros
 
   def process(bin) do
     case match(bin) do

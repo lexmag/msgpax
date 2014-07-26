@@ -1,8 +1,8 @@
 Code.require_file "../test_helper.exs", __DIR__
 
-defmodule MessagePack.DeserializerSuite do
+defmodule Msgpax.DeserializerSuite do
     defmodule BitStringTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     defmacrop assert_unpack(prefix, value) do
       quote do
@@ -30,14 +30,14 @@ defmodule MessagePack.DeserializerSuite do
     end
 
     test "bitstring" do
-      assert_raise MessagePack.Deserializer.Error, "Invalid byte sequence", fn ->
+      assert_raise Msgpax.Deserializer.Error, "Invalid byte sequence", fn ->
         unpack(<<7 :: 3>>)
       end
     end
   end
 
   defmodule ListTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     defmacrop assert_unpack(prefix, value) do
       quote do
@@ -85,7 +85,7 @@ defmodule MessagePack.DeserializerSuite do
   end
 
   defmodule AtomTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     test "nil" do
       assert unpack(<<192>>) == nil
@@ -101,7 +101,7 @@ defmodule MessagePack.DeserializerSuite do
   end
 
   defmodule FloatTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     test "float 32" do
       assert unpack(<<202, 66, 40, 102, 102>>) == 42.099998474121094
@@ -113,7 +113,7 @@ defmodule MessagePack.DeserializerSuite do
   end
 
   defmodule IntegerTest do
-    use MessagePack.Case
+    use Msgpax.Case
 
     test "positive fixint" do
       assert unpack(<<0>>) == 0
