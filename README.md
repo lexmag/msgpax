@@ -17,29 +17,13 @@ After you are done, run `mix deps.get` in your shell to fetch the dependencies.
 ## Usage
 
 ```iex
-iex> squad = Msgpax.pack([300, "Spartans"])
-<<146, 205, 1, 44, 168, 83, 112, 97, 114, 116, 97, 110, 115>>
-iex> Msgpax.unpack(squad)
+iex> {:ok, bin} = Msgpax.pack([300, "Spartans"])
+{:ok, <<146, 205, 1, 44, 168, 83, 112, 97, 114, 116, 97, 110, 115>>}
+iex> bin = Msgpax.pack!([300, "Spartans"])
+iex> {:ok, term} = Msgpax.unpack(bin)
+{:ok, [300, "Spartans"]}
+iex> term = Msgpax.unpack!(bin)
 [300, "Spartans"]
-```
-
-Furthermore, there are `to_msgpack` and `from_msgpack` macros available:
-
-```elixir
-defmodule TrojanHorse do
-  use Msgpax
-
-  def hide(number) do
-    to_msgpack([number, "warriors"])
-  end
-
-  def show(bin) do
-    case from_msgpack(bin) do
-      [number, "warriors"] -> number
-      _ -> raise ArgumentError
-    end
-  end
-end
 ```
 
 ## License
