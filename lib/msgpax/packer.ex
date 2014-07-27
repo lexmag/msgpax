@@ -1,3 +1,15 @@
+defmodule Msgpax.PackError do
+  defexception [:message]
+
+  def exception({:too_big, term}) do
+    %__MODULE__{message: "too big value: #{inspect(term)}"}
+  end
+
+  def exception({:badarg, term}) do
+    %__MODULE__{message: "unprocessable value: #{inspect(term)}"}
+  end
+end
+
 defprotocol Msgpax.Packer do
   def transform(term)
 
@@ -6,6 +18,14 @@ defprotocol Msgpax.Packer do
   catch
     :throw, reason ->
       {:error, reason}
+  end
+
+  Kernel.def pack!(term) do
+    case pack(term) do
+      {:ok, bin} -> bin
+      {:error, reason} ->
+        raise Msgpax.PackError, reason
+    end
   end
 end
 
