@@ -39,12 +39,13 @@ end
 defmodule Msgpax.Unpacker do
   import __MODULE__.Transform
 
-  def unpack(bin) do
+  def unpack(iodata) do
+    bin = IO.iodata_to_binary(iodata)
     case transform(bin) do
       {value, <<>>} ->
         {:ok, value}
-      {_, bin} ->
-        {:error, {:extra_bytes, bin}}
+      {_, bytes} ->
+        {:error, {:extra_bytes, bytes}}
     end
   catch
     :throw, reason ->

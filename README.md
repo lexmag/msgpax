@@ -17,12 +17,13 @@ After you are done, run `mix deps.get` in your shell to fetch the dependencies.
 ## Usage
 
 ```iex
-iex> {:ok, bin} = Msgpax.pack([300, "Spartans"])
-{:ok, <<146, 205, 1, 44, 168, 83, 112, 97, 114, 116, 97, 110, 115>>}
-iex> bin = Msgpax.pack!([300, "Spartans"])
-iex> {:ok, term} = Msgpax.unpack(bin)
+iex> {:ok, iodata} = Msgpax.pack([300, "Spartans"])
+{:ok, [<<146>>, [<<205, 1, 44>>, [<<168>>, "Spartans"]]]}
+iex> iodata = Msgpax.pack!([300, "Spartans"])
+...
+iex> {:ok, term} = Msgpax.unpack(iodata)
 {:ok, [300, "Spartans"]}
-iex> term = Msgpax.unpack!(bin)
+iex> term = Msgpax.unpack!(iodata)
 [300, "Spartans"]
 ```
 

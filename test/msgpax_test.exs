@@ -22,7 +22,7 @@ defmodule MsgpaxTest do
   defmacrop assert_format(term, format, result \\ nil) do
     quote location: :keep do
       assert {:ok, packed} = Msgpax.pack(unquote(term))
-      assert <<unquote_splicing(format), _::bytes>> = packed
+      assert <<unquote_splicing(format), _::bytes>> = IO.iodata_to_binary(packed)
       assert {:ok, unpacked} = Msgpax.unpack(packed)
       assert unpacked == unquote(result || term)
     end
