@@ -2,6 +2,7 @@ language: erlang
 
 otp_release:
   - 17.0
+  - 17.1
 
 env:
   - ELIXIR_VSN=0.14.3
