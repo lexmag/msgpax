@@ -8,7 +8,7 @@ Add Msgpax as a dependency in your `mix.exs` file:
 
 ```elixir
 def deps do
-  [{:msgpax, github: "lexmag/msgpax"}]
+  [{:msgpax, "~> 0.3"}]
 end
 ```
 
