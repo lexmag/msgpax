@@ -70,6 +70,11 @@ defmodule Msgpax.Unpacker do
   transform [0xDA, len::16-integer, value::size(len)-bytes], to: value
   transform [0xDB, len::32-integer, value::size(len)-bytes], to: value
 
+  # Binary
+  transform [0xC4, len::integer, value::size(len)-bytes],    to: value
+  transform [0xC5, len::16-integer, value::size(len)-bytes], to: value
+  transform [0xC6, len::32-integer, value::size(len)-bytes], to: value
+
   # Float
   transform [0xCA, value::32-big-float], to: value
   transform [0xCB, value::64-big-float], to: value
