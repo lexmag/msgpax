@@ -6,6 +6,9 @@ defmodule MsgpaxTest do
 
   defp list(len),
     do: List.duplicate(nil, len)
+  
+  defp bytes(len),
+    do: String.duplicate(<<200>>, len)
 
   defp proplist(0), do: [{}]
   defp proplist(len) do
@@ -51,6 +54,20 @@ defmodule MsgpaxTest do
 
   test "string 32" do
     assert_format string(65536), [219, 0, 1, 0, 0]
+  end
+
+  test "binary 8" do
+    assert_format bytes(1), [0xC4, 1]
+    assert_format bytes(0xFF), [0xC4, 0xFF::8]
+  end
+
+  test "binary 16" do
+    assert_format bytes(0x100), [0xC5, 0x100::16]
+    assert_format bytes(0xFFFF), [0xC5, 0xFFFF::16]
+  end
+
+  test "binary 32" do
+    assert_format bytes(0x10000), [0xC6, 0x10000::32]
   end
 
   test "fixarray" do
@@ -150,7 +167,7 @@ defmodule MsgpaxTest do
     assert_format -2147483649, [211]
   end
 
-  test "bitsring" do
+  test "bitstring" do
     assert_error pack([42, <<5::3>>]), {:badarg, <<5::3>>}
   end
 
