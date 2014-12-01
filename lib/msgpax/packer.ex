@@ -47,7 +47,7 @@ defimpl Msgpax.Packer, for: BitString do
 
   defp format(bin) do
     size = byte_size(bin)
-    if String.printable?(bin) do
+    if String.valid?(bin) do
       cond do
         size < 32          -> <<0b101::3, size::5>>
         size < 256         -> <<0xD9, size::8>>
