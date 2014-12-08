@@ -6,9 +6,11 @@ defmodule MsgpaxTest do
 
   defp list(len),
     do: List.duplicate(nil, len)
-  
-  defp bytes(len),
-    do: String.duplicate(<<200>>, len)
+
+  defp bytes(len) do
+    string(len)
+    |> Msgpax.binary
+  end
 
   defp proplist(0), do: [{}]
   defp proplist(len) do
@@ -57,17 +59,17 @@ defmodule MsgpaxTest do
   end
 
   test "binary 8" do
-    assert_format bytes(1), [0xC4, 1]
-    assert_format bytes(0xFF), [0xC4, 0xFF::8]
+    assert_format bytes(1), [0xC4, 1], string(1)
+    assert_format bytes(0xFF), [0xC4, 0xFF::8], string(0xFF)
   end
 
   test "binary 16" do
-    assert_format bytes(0x100), [0xC5, 0x100::16]
-    assert_format bytes(0xFFFF), [0xC5, 0xFFFF::16]
+    assert_format bytes(0x100), [0xC5, 0x100::16], string(0x100)
+    assert_format bytes(0xFFFF), [0xC5, 0xFFFF::16], string(0xFFFF)
   end
 
   test "binary 32" do
-    assert_format bytes(0x10000), [0xC6, 0x10000::32]
+    assert_format bytes(0x10000), [0xC6, 0x10000::32], string(0x10000)
   end
 
   test "fixarray" do

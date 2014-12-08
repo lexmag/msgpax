@@ -47,23 +47,13 @@ defimpl Msgpax.Packer, for: BitString do
 
   defp format(bin) do
     size = byte_size(bin)
-    if String.valid?(bin) do
-      cond do
-        size < 32          -> <<0b101::3, size::5>>
-        size < 256         -> <<0xD9, size::8>>
-        size < 0x10000     -> <<0xDA, size::16>>
-        size < 0x100000000 -> <<0xDB, size::32>>
+    cond do
+      size < 32          -> <<0b101::3, size::5>>
+      size < 256         -> <<0xD9, size::8>>
+      size < 0x10000     -> <<0xDA, size::16>>
+      size < 0x100000000 -> <<0xDB, size::32>>
 
-        true -> throw {:too_big, bin}
-      end
-    else
-      cond do 
-        size < 256         -> <<0xC4, size::8>>
-        size < 0x10000     -> <<0xC5, size::16>>
-        size < 0x100000000 -> <<0xC6, size::32>>
-
-        true -> throw {:too_big, bin}
-      end
+      true -> throw {:too_big, bin}
     end
   end
 end
@@ -136,6 +126,22 @@ defimpl Msgpax.Packer, for: Integer do
       num < 0x10000000000000000 -> <<0xCF, num::64>>
 
       true -> throw {:too_big, num}
+    end
+  end
+end
+
+defimpl Msgpax.Packer, for: Msgpax.Binary do
+  def transform(%{data: bin}) when is_binary(bin),
+    do: [format(bin), bin]
+
+  defp format(bin) do
+    size = byte_size(bin)
+    cond do
+      size < 256         -> <<0xC4, size::8>>
+      size < 0x10000     -> <<0xC5, size::16>>
+      size < 0x100000000 -> <<0xC6, size::32>>
+
+      true -> throw {:too_big, bin}
     end
   end
 end
