@@ -1,21 +1,19 @@
 defmodule Msgpax.Unpacker.Transform do
-  defmacro transform(format, expr) do
+  import Macro, only: [pipe: 3]
+
+  defmacro deftransform(format, to: value) do
     quote do
-      defp transform(<<unquote_splicing(format), rest::bytes>>) do
-        unquote(body_for(expr))
+      defp transform(<<unquote_splicing(format), rest::bytes>>, _opts) do
+        {unquote(value), rest}
       end
     end
   end
 
-  defp body_for(do: block) do
+  defmacro deftransform(format, do: block) do
     quote do
-      rest |> unquote(block)
-    end
-  end
-
-  defp body_for(to: value) do
-    quote do
-      {unquote(value), rest}
+      defp transform(<<unquote_splicing(format), rest::bytes>>, opts) do
+        unquote(pipe(quote(do: rest), pipe(quote(do: opts), block, 0), 0))
+      end
     end
   end
 end
@@ -39,9 +37,9 @@ end
 defmodule Msgpax.Unpacker do
   import __MODULE__.Transform
 
-  def unpack(iodata) do
+  def unpack(iodata, opts \\ %{}) do
     bin = IO.iodata_to_binary(iodata)
-    case transform(bin) do
+    case transform(bin, opts) do
       {value, <<>>} ->
         {:ok, value}
       {_, bytes} ->
@@ -52,79 +50,79 @@ defmodule Msgpax.Unpacker do
       {:error, reason}
   end
 
-  def unpack!(bin) do
-    case unpack(bin) do
+  def unpack!(bin, opts \\ %{}) do
+    case unpack(bin, opts) do
       {:ok, value} -> value
       {:error, reason} ->
         raise Msgpax.UnpackError, reason
     end
   end
 
-  transform [0xC0], to: nil
-  transform [0xC2], to: false
-  transform [0xC3], to: true
+  deftransform [0xC0], to: nil
+  deftransform [0xC2], to: false
+  deftransform [0xC3], to: true
 
   # String
-  transform [0b101::3, len::5, value::size(len)-bytes],      to: value
-  transform [0xD9, len::integer, value::size(len)-bytes],    to: value
-  transform [0xDA, len::16-integer, value::size(len)-bytes], to: value
-  transform [0xDB, len::32-integer, value::size(len)-bytes], to: value
+  deftransform [0b101::3, len::5, val::size(len)-bytes],      to: val
+  deftransform [0xD9, len::integer, val::size(len)-bytes],    to: val
+  deftransform [0xDA, len::16-integer, val::size(len)-bytes], to: val
+  deftransform [0xDB, len::32-integer, val::size(len)-bytes], to: val
 
   # Binary
-  transform [0xC4, len::integer, value::size(len)-bytes],    to: value
-  transform [0xC5, len::16-integer, value::size(len)-bytes], to: value
-  transform [0xC6, len::32-integer, value::size(len)-bytes], to: value
+  deftransform [0xC4, len::integer, val::size(len)-bytes],    to: val
+  deftransform [0xC5, len::16-integer, val::size(len)-bytes], to: val
+  deftransform [0xC6, len::32-integer, val::size(len)-bytes], to: val
 
   # Float
-  transform [0xCA, value::32-big-float], to: value
-  transform [0xCB, value::64-big-float], to: value
+  deftransform [0xCA, val::32-big-float], to: val
+  deftransform [0xCB, val::64-big-float], to: val
 
   # Integer
-  transform [0::1, value::7],  to: value
-  transform [0xCC, value],     to: value
-  transform [0xCD, value::16], to: value
-  transform [0xCE, value::32], to: value
-  transform [0xCF, value::64], to: value
+  deftransform [0::1, val::7],  to: val
+  deftransform [0xCC, val],     to: val
+  deftransform [0xCD, val::16], to: val
+  deftransform [0xCE, val::32], to: val
+  deftransform [0xCF, val::64], to: val
 
-  transform [0b111::3, value::5],             to: value - 0b100000
-  transform [0xD0, value::signed-integer],    to: value
-  transform [0xD1, value::16-signed-integer], to: value
-  transform [0xD2, value::32-signed-integer], to: value
-  transform [0xD3, value::64-signed-integer], to: value
+  deftransform [0b111::3, val::5],             to: val - 0b100000
+  deftransform [0xD0, val::signed-integer],    to: val
+  deftransform [0xD1, val::16-signed-integer], to: val
+  deftransform [0xD2, val::32-signed-integer], to: val
+  deftransform [0xD3, val::64-signed-integer], to: val
 
   # Array
-  transform [0b1001::4, len::4], do: list(len)
-  transform [0xDC, len::16],     do: list(len)
-  transform [0xDD, len::32],     do: list(len)
+  deftransform [0b1001::4, len::4], do: list(len)
+  deftransform [0xDC, len::16],     do: list(len)
+  deftransform [0xDD, len::32],     do: list(len)
 
   # Map
-  transform [0b1000::4, len::4], do: map(len)
-  transform [0xDE, len::16],     do: map(len)
-  transform [0xDF, len::32],     do: map(len)
+  deftransform [0b1000::4, len::4], do: map(len)
+  deftransform [0xDE, len::16],     do: map(len)
+  deftransform [0xDF, len::32],     do: map(len)
 
-  defp transform(<<bin, _::bytes>>),
+  defp transform(<<bin, _::bytes>>, _opts),
     do: throw({:invalid_format, bin})
 
-  defp transform(<<>>), do: throw(:incomplete)
+  defp transform(<<>>, _opts), do: throw(:incomplete)
 
-  defp list(rest, len, acc \\ [])
-  defp list(rest, 0, acc),
+  defp list(rest, opts, len, acc \\ [])
+  defp list(rest, _opts, 0, acc),
     do: {Enum.reverse(acc), rest}
 
-  defp list(rest, len, acc) do
-    {value, rest} = transform(rest)
+  defp list(rest, opts, len, acc) do
+    {val, rest} = transform(rest, opts)
 
-    list(rest, len - 1, [value | acc])
+    list(rest, opts, len - 1, [val | acc])
   end
 
-  defp map(rest, len, acc \\ [])
-  defp map(rest, 0, acc),
+  defp map(rest, opts, len, acc \\ [])
+  defp map(rest, _opts, 0, acc),
     do: {Enum.into(Enum.reverse(acc), %{}), rest}
 
-  defp map(rest, len, acc) do
-    {key, rest} = transform(rest)
-    {value, rest} = transform(rest)
+  defp map(rest, opts, len, acc) do
+    {key, rest} = transform(rest, opts)
+    {val, rest} = transform(rest, opts)
 
-    map(rest, len - 1, [{key, value} | acc])
+    map(rest, opts, len - 1, [{key, val} | acc])
   end
 end
