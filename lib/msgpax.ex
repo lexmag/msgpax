@@ -4,9 +4,19 @@ defmodule Msgpax do
   end
 
   def binary(bin) when is_binary(bin) do
-    %__MODULE__.Binary{data: bin}
+    %Binary{data: bin}
   end
 
-  defdelegate [pack(term), pack!(term)], to: __MODULE__.Packer
-  defdelegate [unpack(iodata), unpack!(iodata)], to: __MODULE__.Unpacker
+  alias __MODULE__.Packer
+  alias __MODULE__.Unpacker
+
+  defdelegate [pack(term), pack!(term)], to: Packer
+
+  def unpack(iodata, opts \\ %{}) do
+    Unpacker.unpack(iodata, opts)
+  end
+
+  def unpack!(iodata, opts \\ %{}) do
+    Unpacker.unpack!(iodata, opts)
+  end
 end

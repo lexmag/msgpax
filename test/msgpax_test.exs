@@ -24,12 +24,21 @@ defmodule MsgpaxTest do
     |> Enum.into(%{})
   end
 
-  defmacrop assert_format(term, format, result \\ nil) do
-    quote location: :keep do
+  defmacrop assert_format(term, format),
+    do: __assert_format__(term, format, term, quote(do: %{}))
+
+  defmacrop assert_format(term, format, {result, opts}),
+    do: __assert_format__(term, format, result, opts)
+
+  defmacrop assert_format(term, format, result),
+    do: __assert_format__(term, format, result, quote(do: %{}))
+
+  defp __assert_format__(term, format, result, opts) do
+    quote do
       assert {:ok, packed} = Msgpax.pack(unquote(term))
       assert <<unquote_splicing(format), _::bytes>> = IO.iodata_to_binary(packed)
-      assert {:ok, unpacked} = Msgpax.unpack(packed)
-      assert unpacked == unquote(result || term)
+      assert {:ok, unpacked} = Msgpax.unpack(packed, unquote(opts))
+      assert unpacked == unquote(result)
     end
   end
 
@@ -50,17 +59,20 @@ defmodule MsgpaxTest do
   end
 
   test "string 16" do
-    assert_format string(256), [218, 1, 0]
-    assert_format string(65535), [218, 255, 255]
+    assert_format string(0x100), [218, 0x100::16]
+    assert_format string(0xFFFF), [218, 0xFFFF::16]
   end
 
   test "string 32" do
-    assert_format string(65536), [219, 0, 1, 0, 0]
+    assert_format string(0x10000), [219, 0x10000::32]
   end
 
   test "binary 8" do
     assert_format bytes(1), [0xC4, 1], string(1)
-    assert_format bytes(0xFF), [0xC4, 0xFF::8], string(0xFF)
+    assert_format bytes(255), [0xC4, 255], string(255)
+
+    assert_format bytes(1), [0xC4, 1], {bytes(1), %{binary: true}}
+    assert_format bytes(255), [0xC4, 255], {bytes(255), %{binary: true}}
   end
 
   test "binary 16" do
@@ -78,12 +90,12 @@ defmodule MsgpaxTest do
   end
 
   test "array 16" do
-    assert_format list(16), [220, 0, 16]
-    assert_format list(65535), [220, 255, 255]
+    assert_format list(16), [220, 16::16]
+    assert_format list(0xFFFF), [220, 0xFFFF::16]
   end
 
   test "array 32" do
-    assert_format list(65536), [221, 0, 1, 0, 0]
+    assert_format list(0x10000), [221, 0x10000::32]
   end
 
   test "fixmap" do
@@ -95,12 +107,12 @@ defmodule MsgpaxTest do
   end
 
   test "map 16" do
-    assert_format map(16), [222, 0, 16]
-    assert_format map(65535), [222, 255, 255]
+    assert_format map(16), [222, 16::16]
+    assert_format map(0xFFFF), [222, 0xFFFF::16]
   end
 
   test "map 32" do
-    assert_format map(65536), [223, 0, 1, 0, 0]
+    assert_format map(0x10000), [223, 0x10000::32]
   end
 
   test "booleans" do

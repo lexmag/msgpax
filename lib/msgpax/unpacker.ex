@@ -37,7 +37,7 @@ end
 defmodule Msgpax.Unpacker do
   import __MODULE__.Transform
 
-  def unpack(iodata, opts \\ %{}) do
+  def unpack(iodata, opts) do
     bin = IO.iodata_to_binary(iodata)
     case transform(bin, opts) do
       {value, <<>>} ->
@@ -50,7 +50,7 @@ defmodule Msgpax.Unpacker do
       {:error, reason}
   end
 
-  def unpack!(bin, opts \\ %{}) do
+  def unpack!(bin, opts) do
     case unpack(bin, opts) do
       {:ok, value} -> value
       {:error, reason} ->
@@ -69,9 +69,9 @@ defmodule Msgpax.Unpacker do
   deftransform [0xDB, len::32-integer, val::size(len)-bytes], to: val
 
   # Binary
-  deftransform [0xC4, len::integer, val::size(len)-bytes],    to: val
-  deftransform [0xC5, len::16-integer, val::size(len)-bytes], to: val
-  deftransform [0xC6, len::32-integer, val::size(len)-bytes], to: val
+  deftransform [0xC4, len::integer, val::size(len)-bytes],    do: binary(val)
+  deftransform [0xC5, len::16-integer, val::size(len)-bytes], do: binary(val)
+  deftransform [0xC6, len::32-integer, val::size(len)-bytes], do: binary(val)
 
   # Float
   deftransform [0xCA, val::32-big-float], to: val
@@ -104,6 +104,12 @@ defmodule Msgpax.Unpacker do
     do: throw({:invalid_format, bin})
 
   defp transform(<<>>, _opts), do: throw(:incomplete)
+
+  defp binary(rest, %{binary: true}, val),
+    do: {Msgpax.binary(val), rest}
+
+  defp binary(rest, _opts, val),
+    do: {val, rest}
 
   defp list(rest, opts, len, acc \\ [])
   defp list(rest, _opts, 0, acc),
