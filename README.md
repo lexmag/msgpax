@@ -27,6 +27,18 @@ iex> term = Msgpax.unpack!(iodata)
 [300, "Spartans"]
 ```
 
+### Binary format
+
+```iex
+iex> msgbin = Msgpax.binary(<<3, 18, 122, 27, 115>>)
+%Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
+iex> iodata = Msgpax.pack!(msgbin)
+[<<196, 5>>, <<3, 18, 122, 27, 115>>]
+...
+iex> code = Msgpax.unpack!(iodata, %{binary: true})
+%Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
+```
+
 ## Data conversion
 
 Elixir                         | MessagePack   | Elixir
