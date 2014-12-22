@@ -199,5 +199,6 @@ defmodule MsgpaxTest do
 
   test "incomplete binary" do
     assert_error unpack(<<147, 1, 2>>), :incomplete
+    assert_error unpack(<<5::3>>), :incomplete
   end
 end

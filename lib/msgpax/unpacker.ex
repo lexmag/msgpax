@@ -103,7 +103,8 @@ defmodule Msgpax.Unpacker do
   defp transform(<<bin, _::bytes>>, _opts),
     do: throw({:invalid_format, bin})
 
-  defp transform(<<>>, _opts), do: throw(:incomplete)
+  defp transform(<<_::bits>>, _opts),
+    do: throw(:incomplete)
 
   defp binary(rest, %{binary: true}, val),
     do: {Msgpax.binary(val), rest}
