@@ -27,7 +27,16 @@ iex> term = Msgpax.unpack!(iodata)
 [300, "Spartans"]
 ```
 
-### Binary format
+#### Stream-oriented deserialization
+
+```iex
+iex> {term1, rest} = Msgpax.unpack_slice!(buffer)
+{[1,2,3], <<4>>}
+iex> {:ok, term2, rest} = Msgpax.unpack_slice(rest)
+{:ok, 4, ""}
+```
+
+#### Binary format
 
 ```iex
 iex> msgbin = Msgpax.binary(<<3, 18, 122, 27, 115>>)

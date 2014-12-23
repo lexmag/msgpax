@@ -12,11 +12,30 @@ defmodule Msgpax do
 
   defdelegate [pack(term), pack!(term)], to: Packer
 
-  def unpack(iodata, opts \\ %{}) do
+  def unpack_slice(iodata, opts \\ %{}) do
     Unpacker.unpack(iodata, opts)
   end
 
-  def unpack!(iodata, opts \\ %{}) do
+  def unpack_slice!(iodata, opts \\ %{}) do
     Unpacker.unpack!(iodata, opts)
+  end
+
+  def unpack(iodata, opts \\ %{}) do
+    case unpack_slice(iodata, opts) do
+      {:ok, value, <<>>} ->
+        {:ok, value}
+      {:ok, _, bytes} ->
+        {:error, {:extra_bytes, bytes}}
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  def unpack!(iodata, opts \\ %{}) do
+    case unpack(iodata, opts) do
+      {:ok, value} -> value
+      {:error, reason} ->
+        raise Msgpax.UnpackError, reason
+    end
   end
 end

@@ -201,4 +201,9 @@ defmodule MsgpaxTest do
     assert_error unpack(<<147, 1, 2>>), :incomplete
     assert_error unpack(<<5::3>>), :incomplete
   end
+
+  test "unpack_slice" do
+    assert Msgpax.unpack_slice(<<255, 1>>) == {:ok, -1, <<1>>}
+    assert_error unpack_slice(<<5::3>>), :incomplete
+  end
 end
