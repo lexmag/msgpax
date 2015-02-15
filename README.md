@@ -16,36 +16,36 @@ After you are done, run `mix deps.get` in your shell to fetch the dependencies.
 
 ## Usage
 
-```iex
-iex> {:ok, iodata} = Msgpax.pack([300, "Spartans"])
-{:ok, [<<146>>, [<<205, 1, 44>>, [<<168>>, "Spartans"]]]}
-iex> iodata = Msgpax.pack!([300, "Spartans"])
-...
-iex> {:ok, term} = Msgpax.unpack(iodata)
-{:ok, [300, "Spartans"]}
-iex> term = Msgpax.unpack!(iodata)
-[300, "Spartans"]
+```elixir
+{:ok, iodata} = Msgpax.pack([300, "Spartans"])
+# => {:ok, [<<146>>, [<<205, 1, 44>>, [<<168>>, "Spartans"]]]}
+iodata = Msgpax.pack!([300, "Spartans"])
+# ...
+{:ok, term} = Msgpax.unpack(iodata)
+# => {:ok, [300, "Spartans"]}
+term = Msgpax.unpack!(iodata)
+# => [300, "Spartans"]
 ```
 
 #### Stream-oriented deserialization
 
-```iex
-iex> {term1, rest} = Msgpax.unpack_slice!(buffer)
-{[1,2,3], <<4>>}
-iex> {:ok, term2, rest} = Msgpax.unpack_slice(rest)
-{:ok, 4, ""}
+```elixir
+{term1, rest} = Msgpax.unpack_slice!(buffer)
+# => {[1,2,3], <<4>>}
+{:ok, term2, rest} = Msgpax.unpack_slice(rest)
+# => {:ok, 4, ""}
 ```
 
 #### Binary format
 
-```iex
-iex> msgbin = Msgpax.binary(<<3, 18, 122, 27, 115>>)
-%Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
-iex> iodata = Msgpax.pack!(msgbin)
-[<<196, 5>>, <<3, 18, 122, 27, 115>>]
-...
-iex> code = Msgpax.unpack!(iodata, %{binary: true})
-%Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
+```elixir
+msgbin = Msgpax.binary(<<3, 18, 122, 27, 115>>)
+# => %Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
+iodata = Msgpax.pack!(msgbin)
+# => [<<196, 5>>, <<3, 18, 122, 27, 115>>]
+# ...
+code = Msgpax.unpack!(iodata, %{binary: true})
+# => %Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
 ```
 
 ## Data conversion
