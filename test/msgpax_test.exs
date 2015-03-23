@@ -1,5 +1,5 @@
 defmodule MsgpaxTest do
-  use ExUnit.Case, async: true
+  use Msgpax.Case, async: true
 
   defp string(len),
     do: String.duplicate(".", len)
@@ -22,24 +22,6 @@ defmodule MsgpaxTest do
   defp map(len) do
     proplist(len)
     |> Enum.into(%{})
-  end
-
-  defmacrop assert_format(term, format),
-    do: __assert_format__(term, format, term, quote(do: %{}))
-
-  defmacrop assert_format(term, format, {result, opts}),
-    do: __assert_format__(term, format, result, opts)
-
-  defmacrop assert_format(term, format, result),
-    do: __assert_format__(term, format, result, quote(do: %{}))
-
-  defp __assert_format__(term, format, result, opts) do
-    quote do
-      assert {:ok, packed} = Msgpax.pack(unquote(term))
-      assert <<unquote_splicing(format), _::bytes>> = IO.iodata_to_binary(packed)
-      assert {:ok, unpacked} = Msgpax.unpack(packed, unquote(opts))
-      assert unpacked == unquote(result)
-    end
   end
 
   defmacrop assert_error(expr, reason) do
@@ -190,15 +172,15 @@ defmodule MsgpaxTest do
     assert_error pack([42, <<5::3>>]), {:badarg, <<5::3>>}
   end
 
-  test "too big error" do
+  test "too big data" do
     assert_error pack([true, -9223372036854775809]), {:too_big, -9223372036854775809}
   end
 
-  test "extra bytes error" do
+  test "extra bytes" do
     assert_error unpack(<<255, 1, 2>>), {:extra_bytes, <<1, 2>>}
   end
 
-  test "extra bytes error-" do
+  test "invalid format" do
     assert_error unpack(<<193, 1>>), {:invalid_format, 193}
   end
 

@@ -36,7 +36,7 @@ term = Msgpax.unpack!(iodata)
 # => {:ok, 4, ""}
 ```
 
-#### Binary format
+#### Binary type
 
 ```elixir
 msgbin = Msgpax.Bin.new(<<3, 18, 122, 27, 115>>)
@@ -47,6 +47,11 @@ iodata = Msgpax.pack!(msgbin)
 code = Msgpax.unpack!(iodata, %{binary: true})
 # => #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 ```
+
+#### Extension type
+
+See [`ext_test.exs`](./test/msgpax/ext_test.exs)
+file for more information and usage examples.
 
 #### Packer protocol deriving
 
@@ -77,6 +82,7 @@ Elixir                         | MessagePack   | Elixir
 `%{foo: "bar"}`                | map           | `%{"foo" => "bar"}`
 `[foo: "bar"]`                 | map           | `%{"foo" => "bar"}`
 `[1, true]`                    | array         | `[1, true]`
+`#Msgpax.Ext<4, "02:12">`      | extension     | `#Msgpax.Ext<4, "02:12">`
 
 ## License
 

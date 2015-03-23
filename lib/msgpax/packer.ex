@@ -159,3 +159,25 @@ defimpl Msgpax.Packer, for: Msgpax.Bin do
     end
   end
 end
+
+defimpl Msgpax.Packer, for: Msgpax.Ext do
+  def transform(%{type: type, data: data}) do
+    [format(data), type | data]
+  end
+
+  defp format(data) do
+    size = byte_size(data)
+    cond do
+      size == 1          -> <<0xD4>>
+      size == 2          -> <<0xD5>>
+      size == 4          -> <<0xD6>>
+      size == 8          -> <<0xD7>>
+      size == 16         -> <<0xD8>>
+      size < 256         -> <<0xC7, size>>
+      size < 0x10000     -> <<0xC8, size::16>>
+      size < 0x100000000 -> <<0xC9, size::32>>
+
+      true -> throw {:too_big, data}
+    end
+  end
+end

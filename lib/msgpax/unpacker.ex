@@ -29,6 +29,10 @@ defmodule Msgpax.UnpackError do
         "invalid format: #{inspect(bin)}"
       :incomplete ->
         "packet is incomplete"
+      {:bad_ext_type, type} ->
+        "bad extension type: #{type}"
+      {:broken_ext, type, data} ->
+        "unable to unpack type #{type} extension data: #{inspect(data)}"
     end
   end
 end
@@ -40,7 +44,6 @@ defmodule Msgpax.Unpacker do
     {value, rest} =
       IO.iodata_to_binary(iodata)
       |> transform(opts)
-
     {:ok, value, rest}
   catch
     :throw, reason ->
@@ -97,6 +100,17 @@ defmodule Msgpax.Unpacker do
   deftransform [0xDE, len::16],     do: map(len)
   deftransform [0xDF, len::32],     do: map(len)
 
+  # Extension
+  deftransform [0xD4, type, val::1-bytes],  do: ext(type, val)
+  deftransform [0xD5, type, val::2-bytes],  do: ext(type, val)
+  deftransform [0xD6, type, val::4-bytes],  do: ext(type, val)
+  deftransform [0xD7, type, val::8-bytes],  do: ext(type, val)
+  deftransform [0xD8, type, val::16-bytes], do: ext(type, val)
+
+  deftransform [0xC7, len, type, val::size(len)-bytes],     do: ext(type, val)
+  deftransform [0xC8, len::16, type, val::size(len)-bytes], do: ext(type, val)
+  deftransform [0xC9, len::32, type, val::size(len)-bytes], do: ext(type, val)
+
   defp transform(<<bin, _::bytes>>, _opts),
     do: throw({:invalid_format, bin})
 
@@ -115,7 +129,6 @@ defmodule Msgpax.Unpacker do
 
   defp list(rest, opts, len, acc) do
     {val, rest} = transform(rest, opts)
-
     list(rest, opts, len - 1, [val | acc])
   end
 
@@ -126,7 +139,26 @@ defmodule Msgpax.Unpacker do
   defp map(rest, opts, len, acc) do
     {key, rest} = transform(rest, opts)
     {val, rest} = transform(rest, opts)
-
     map(rest, opts, len - 1, [{key, val} | acc])
+  end
+
+  defp ext(rest, opts, type, data) when type in 0..127 do
+    {ext(type, data, opts), rest}
+  end
+
+  defp ext(_rest, _opts, type, _data) do
+    throw {:bad_ext_type, type}
+  end
+
+  defp ext(type, data, %{ext: module}) when is_atom(module) do
+    case module.unpack(type, data) do
+      {:ok, result} -> result
+      :error ->
+        throw {:broken_ext, type, data}
+    end
+  end
+
+  defp ext(type, data, _opts) do
+    Msgpax.Ext.new(type, data)
   end
 end
