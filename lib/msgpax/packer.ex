@@ -59,6 +59,17 @@ defimpl Msgpax.Packer, for: BitString do
 end
 
 defimpl Msgpax.Packer, for: Map do
+  defmacro __deriving__(module, _, _opts) do
+    quote do
+      defimpl unquote(@protocol), for: unquote(module) do
+        def transform(struct) do
+          Map.from_struct(struct)
+          |> @protocol.Map.transform
+        end
+      end
+    end
+  end
+
   def transform(map) do
     [format(map),
      for({key, value} <- map,

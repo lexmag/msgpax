@@ -48,6 +48,11 @@ defmodule MsgpaxTest do
     end
   end
 
+  defmodule User do
+    @derive [Msgpax.Packer]
+    defstruct [:name]
+  end
+
   test "fixstring" do
     assert_format string(0), [160]
     assert_format string(31), [191]
@@ -205,5 +210,13 @@ defmodule MsgpaxTest do
   test "unpack_slice" do
     assert Msgpax.unpack_slice(<<255, 1>>) == {:ok, -1, <<1>>}
     assert_error unpack_slice(<<5::3>>), :incomplete
+  end
+
+  test "deriving" do
+    assert Msgpax.pack!(%User{name: "Lex"}) == Msgpax.pack!(%{name: "Lex"})
+
+    assert_raise Protocol.UndefinedError, fn ->
+      Msgpax.pack!(%URI{})
+    end
   end
 end

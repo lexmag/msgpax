@@ -48,6 +48,18 @@ code = Msgpax.unpack!(iodata, %{binary: true})
 # => %Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
 ```
 
+#### Packer deriving
+
+```elixir
+defmodule User do
+  @derive [Msgpax.Packer]
+  defstruct [:name]
+end
+
+Msgpax.pack!(%User{name: "Lex"})
+# => [<<129>>, [[[<<164>>, "name"], [<<163>>, "Lex"]]]]
+```
+
 ## Data conversion
 
 Elixir                         | MessagePack   | Elixir
