@@ -48,7 +48,7 @@ code = Msgpax.unpack!(iodata, %{binary: true})
 # => %Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
 ```
 
-#### Packer deriving
+#### Packer protocol deriving
 
 ```elixir
 defmodule User do
