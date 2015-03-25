@@ -4,7 +4,7 @@ defmodule Msgpax.Mixfile do
   def project do
     [app: :msgpax,
      version: "0.6.0",
-     elixir: ">= 0.14.3",
+     elixir: ">= 0.15.0",
      description: description,
      package: package]
   end
