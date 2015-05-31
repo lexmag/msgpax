@@ -41,7 +41,7 @@ end
 
 defimpl Msgpax.Packer, for: BitString do
   def transform(bin) when is_binary(bin),
-    do: [format(bin), bin]
+    do: [format(bin) | bin]
 
   def transform(bits), do: throw({:badarg, bits})
 
@@ -71,9 +71,9 @@ defimpl Msgpax.Packer, for: Map do
   end
 
   def transform(map) do
-    [format(map),
-     for({key, value} <- map,
-        do: [@protocol.transform(key), @protocol.transform(value)])]
+    for {key, value} <- map, into: [format(map)] do
+      [@protocol.transform(key) | @protocol.transform(value)]
+    end
   end
 
   defp format(map) do
@@ -94,7 +94,9 @@ defimpl Msgpax.Packer, for: List do
     do: @protocol.Map.transform(list)
 
   def transform(list) do
-    [format(list), for(elem <- list, do: @protocol.transform(elem))]
+    for elem <- list, into: [format(list)] do
+      @protocol.transform(elem)
+    end
   end
 
   defp format(list) do
@@ -143,7 +145,7 @@ end
 
 defimpl Msgpax.Packer, for: Msgpax.Binary do
   def transform(%{data: bin}) when is_binary(bin),
-    do: [format(bin), bin]
+    do: [format(bin) | bin]
 
   defp format(bin) do
     size = byte_size(bin)
