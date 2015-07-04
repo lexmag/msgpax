@@ -1,12 +1,13 @@
 defmodule Msgpax.PackError do
-  defexception [:message]
+  defexception [:reason]
 
-  def exception({:too_big, term}) do
-    %__MODULE__{message: "too big value: #{inspect(term)}"}
-  end
-
-  def exception({:badarg, term}) do
-    %__MODULE__{message: "unprocessable value: #{inspect(term)}"}
+  def message(%__MODULE__{} = exception) do
+    case exception.reason() do
+      {:too_big, term} ->
+        "too big value: #{inspect(term)}"
+      {:badarg, term} ->
+        "unprocessable value: #{inspect(term)}"
+    end
   end
 end
 
@@ -24,7 +25,7 @@ defprotocol Msgpax.Packer do
     case pack(term) do
       {:ok, bin} -> bin
       {:error, reason} ->
-        raise Msgpax.PackError, reason
+        raise Msgpax.PackError, reason: reason
     end
   end
 end

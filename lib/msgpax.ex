@@ -35,7 +35,7 @@ defmodule Msgpax do
     case unpack(iodata, opts) do
       {:ok, value} -> value
       {:error, reason} ->
-        raise Msgpax.UnpackError, reason
+        raise Msgpax.UnpackError, reason: reason
     end
   end
 end

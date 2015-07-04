@@ -19,18 +19,17 @@ defmodule Msgpax.Unpacker.Transform do
 end
 
 defmodule Msgpax.UnpackError do
-  defexception [:message]
+  defexception [:reason]
 
-  def exception({:extra_bytes, bin}) do
-    %__MODULE__{message: "extra bytes follow after packet: #{inspect(bin)}"}
-  end
-
-  def exception({:invalid_format, bin}) do
-    %__MODULE__{message: "invalid format: #{inspect(bin)}"}
-  end
-
-  def exception(:incomplete) do
-    %__MODULE__{message: "packet is incomplete"}
+  def message(%__MODULE__{} = exception) do
+    case exception.reason() do
+      {:extra_bytes, bin} ->
+        "extra bytes follow after packet: #{inspect(bin)}"
+      {:invalid_format, bin} ->
+        "invalid format: #{inspect(bin)}"
+      :incomplete ->
+        "packet is incomplete"
+    end
   end
 end
 
@@ -52,7 +51,7 @@ defmodule Msgpax.Unpacker do
     case unpack(iodata, opts) do
       {:ok, value, rest} -> {value, rest}
       {:error, reason} ->
-        raise Msgpax.UnpackError, reason
+        raise Msgpax.UnpackError, reason: reason
     end
   end
 
