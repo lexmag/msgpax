@@ -9,7 +9,7 @@ defmodule MsgpaxTest do
 
   defp bytes(len) do
     string(len)
-    |> Msgpax.binary
+    |> Msgpax.Bin.new()
   end
 
   defp proplist(0), do: [{}]

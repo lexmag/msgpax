@@ -39,13 +39,13 @@ term = Msgpax.unpack!(iodata)
 #### Binary format
 
 ```elixir
-msgbin = Msgpax.binary(<<3, 18, 122, 27, 115>>)
-# => %Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
+msgbin = Msgpax.Bin.new(<<3, 18, 122, 27, 115>>)
+# => #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 iodata = Msgpax.pack!(msgbin)
 # => [<<196, 5>>, <<3, 18, 122, 27, 115>>]
 # ...
 code = Msgpax.unpack!(iodata, %{binary: true})
-# => %Msgpax.Binary{data: <<3, 18, 122, 27, 115>>}
+# => #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 ```
 
 #### Packer protocol deriving
@@ -73,7 +73,7 @@ Elixir                         | MessagePack   | Elixir
 `Atom`                         | string        | `"Elixir.Atom"`
 `"str"`                        | string        | `"str"`
 `"\xFF\xFF"`                   | string        | `"\xFF\xFF"`
-`%Msgpax.Binary{data: "\xFF"}` | binary        | `"\xFF"`
+`#Msgpax.Bin<"\xFF">`          | binary        | `"\xFF"`
 `%{foo: "bar"}`                | map           | `%{"foo" => "bar"}`
 `[foo: "bar"]`                 | map           | `%{"foo" => "bar"}`
 `[1, true]`                    | array         | `[1, true]`

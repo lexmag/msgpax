@@ -144,7 +144,7 @@ defimpl Msgpax.Packer, for: Integer do
   end
 end
 
-defimpl Msgpax.Packer, for: Msgpax.Binary do
+defimpl Msgpax.Packer, for: Msgpax.Bin do
   def transform(%{data: bin}) when is_binary(bin),
     do: [format(bin) | bin]
 

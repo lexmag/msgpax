@@ -104,7 +104,7 @@ defmodule Msgpax.Unpacker do
     do: throw(:incomplete)
 
   defp binary(rest, %{binary: true}, val),
-    do: {Msgpax.binary(val), rest}
+    do: {Msgpax.Bin.new(val), rest}
 
   defp binary(rest, _opts, val),
     do: {val, rest}
