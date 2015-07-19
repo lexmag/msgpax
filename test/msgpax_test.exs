@@ -169,7 +169,7 @@ defmodule MsgpaxTest do
   end
 
   test "bitstring" do
-    assert_error pack([42, <<5::3>>]), {:badarg, <<5::3>>}
+    assert_error pack([42, <<5::3>>]), {:bad_arg, <<5::3>>}
   end
 
   test "too big data" do
@@ -180,8 +180,8 @@ defmodule MsgpaxTest do
     assert_error unpack(<<255, 1, 2>>), {:extra_bytes, <<1, 2>>}
   end
 
-  test "invalid format" do
-    assert_error unpack(<<193, 1>>), {:invalid_format, 193}
+  test "bad format" do
+    assert_error unpack(<<193, 1>>), {:bad_format, 193}
   end
 
   test "incomplete binary" do

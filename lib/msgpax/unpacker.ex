@@ -25,8 +25,8 @@ defmodule Msgpax.UnpackError do
     case exception.reason() do
       {:extra_bytes, bin} ->
         "extra bytes follow after packet: #{inspect(bin)}"
-      {:invalid_format, bin} ->
-        "invalid format: #{inspect(bin)}"
+      {:bad_format, bin} ->
+        "bad format: #{inspect(bin)}"
       :incomplete ->
         "packet is incomplete"
       {:bad_ext_type, type} ->
@@ -112,7 +112,7 @@ defmodule Msgpax.Unpacker do
   deftransform [0xC9, len::32, type, val::size(len)-bytes], do: ext(type, val)
 
   defp transform(<<bin, _::bytes>>, _opts),
-    do: throw({:invalid_format, bin})
+    do: throw({:bad_format, bin})
 
   defp transform(<<_::bits>>, _opts),
     do: throw(:incomplete)

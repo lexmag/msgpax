@@ -5,7 +5,7 @@ defmodule Msgpax.PackError do
     case exception.reason() do
       {:too_big, term} ->
         "too big value: #{inspect(term)}"
-      {:badarg, term} ->
+      {:bad_arg, term} ->
         "unprocessable value: #{inspect(term)}"
     end
   end
@@ -44,7 +44,7 @@ defimpl Msgpax.Packer, for: BitString do
   def transform(bin) when is_binary(bin),
     do: [format(bin) | bin]
 
-  def transform(bits), do: throw({:badarg, bits})
+  def transform(bits), do: throw({:bad_arg, bits})
 
   defp format(bin) do
     size = byte_size(bin)
