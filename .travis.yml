@@ -1,11 +1,13 @@
 language: elixir
 
-elixir: 
-  - 0.15.0
-  - 1.0.0
-
 otp_release:
   - 17.0
   - 17.1
+
+elixir:
+  - 0.15.0
+  - 1.0.0
+
+sudo: false
 
 script: mix test --trace
