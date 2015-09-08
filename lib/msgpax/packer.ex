@@ -61,14 +61,7 @@ end
 
 defimpl Msgpax.Packer, for: Map do
   defmacro __deriving__(module, _, _opts) do
-    quote do
-      defimpl unquote(@protocol), for: unquote(module) do
-        def transform(struct) do
-          Map.from_struct(struct)
-          |> @protocol.Map.transform
-        end
-      end
-    end
+    @protocol.Any.deriving(module)
   end
 
   def transform(map) do
@@ -179,5 +172,27 @@ defimpl Msgpax.Packer, for: Msgpax.Ext do
 
       true -> throw {:too_big, data}
     end
+  end
+end
+
+defimpl Msgpax.Packer, for: Any do
+  defmacro __deriving__(module, _, _opts) do
+    deriving(module)
+  end
+
+  def deriving(module) do
+    quote do
+      defimpl unquote(@protocol), for: unquote(module) do
+        def transform(struct) do
+          Map.from_struct(struct)
+          |> @protocol.Map.transform
+        end
+      end
+    end
+  end
+
+  def transform(term) do
+    raise Protocol.UndefinedError,
+      protocol: @protocol, value: term
   end
 end
