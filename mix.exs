@@ -5,6 +5,7 @@ defmodule Msgpax.Mixfile do
     [app: :msgpax,
      version: "0.8.1",
      elixir: ">= 0.15.0",
+     consolidate_protocols: Mix.env != :test,
      description: description,
      package: package]
   end
