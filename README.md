@@ -53,6 +53,8 @@ code = Msgpax.unpack!(iodata, %{binary: true})
 See [`ext_test.exs`](./test/msgpax/ext_test.exs)
 file for more information and usage examples.
 
+New extension type requires an implementation of `Msgpax.Packer` protocol.
+Mix consolidates protocols by default since Elixir 1.2.0. So if you have been implementing new extensions exclusively as part of your test suite the consolidation should be disabled by setting `consolidate_protocols: Mix.env != :test` in the project config.
 #### Packer protocol deriving
 
 ```elixir
