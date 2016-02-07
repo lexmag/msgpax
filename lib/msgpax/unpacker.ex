@@ -19,6 +19,10 @@ defmodule Msgpax.Unpacker.Transform do
 end
 
 defmodule Msgpax.UnpackError do
+  @moduledoc """
+  Raises when there's an error in de-serializing some data into an Elixir term.
+  """
+
   defexception [:reason]
 
   def message(%__MODULE__{} = exception) do

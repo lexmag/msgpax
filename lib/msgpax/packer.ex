@@ -1,4 +1,8 @@
 defmodule Msgpax.PackError do
+  @moduledoc """
+  Raises when there's an error in serializing an Elixir term.
+  """
+
   defexception [:reason]
 
   def message(%__MODULE__{} = exception) do
