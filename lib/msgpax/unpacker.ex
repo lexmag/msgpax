@@ -1,4 +1,7 @@
 defmodule Msgpax.Unpacker.Transform do
+  # This module is only used internally.
+  @moduledoc false
+
   import Macro, only: [pipe: 3]
 
   defmacro deftransform(format, to: value) do
@@ -42,6 +45,8 @@ defmodule Msgpax.UnpackError do
 end
 
 defmodule Msgpax.Unpacker do
+  @moduledoc false
+
   import __MODULE__.Transform
 
   def unpack(iodata, opts) do
