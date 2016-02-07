@@ -16,8 +16,33 @@ defmodule Msgpax.PackError do
 end
 
 defprotocol Msgpax.Packer do
+  @moduledoc """
+  The `Msgpax.Packer` protocol is responsible for serializing any Elixir data
+  structure according to the MessagePack specification.
+
+  Some notable properties of the implementation of this protocol for the
+  built-in Elixir data structures:
+
+    * atoms are encoded as strings (i.e., they're converted to strings first and
+      then encoded as strings)
+    * bitstrings can only be encoded as long as they're binaries (and not actual
+      bitstrings - i.e., the number of bits must be a multiple of 8)
+    * binaries (or `Msgpax.Bin` structs) containing `2^32` or more bytes cannot
+      be encoded
+    * maps with more than `2^32` elements cannot be encoded
+    * lists with more than `2^32` elements cannot be encoded
+    * integers bigger than `2^64` or smaller than `-2^63` cannot be encoded
+
+  """
+
+  @doc """
+  This function serializes `term`.
+
+  It returns an iodata result.
+  """
   def transform(term)
 
+  @doc false
   Kernel.def pack(term) do
     {:ok, transform(term)}
   catch
@@ -25,6 +50,7 @@ defprotocol Msgpax.Packer do
       {:error, reason}
   end
 
+  @doc false
   Kernel.def pack!(term) do
     case pack(term) do
       {:ok, bin} -> bin
