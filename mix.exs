@@ -3,7 +3,7 @@ defmodule Msgpax.Mixfile do
 
   def project do
     [app: :msgpax,
-     version: "0.8.1",
+     version: "0.8.2",
      elixir: "~> 1.0",
      consolidate_protocols: Mix.env != :test,
      description: description(),
