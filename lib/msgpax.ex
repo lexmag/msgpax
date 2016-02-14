@@ -2,6 +2,29 @@ defmodule Msgpax do
   @moduledoc """
   This module provides functions for serializing and de-serializing Elixir terms
   using the [MessagePack](http://msgpack.org/) format.
+
+  ## Data conversion
+
+  The following table shows how Elixir types are serialized to MessagePack types
+  and how MessagePack types are de-serialized back to Elixir types.
+
+  Elixir                         | MessagePack   | Elixir
+  ------------------------------ | ------------- | -------------
+  `nil`                          | nil           | `nil`
+  `true`                         | boolean       | `true`
+  `false`                        | boolean       | `false`
+  `-1`                           | integer       | `-1`
+  `1.25`                         | float         | `1.25`
+  `:ok`                          | string        | `"ok"`
+  `Atom`                         | string        | `"Elixir.Atom"`
+  `"str"`                        | string        | `"str"`
+  `"\xFF\xFF"`                   | string        | `"\xFF\xFF"`
+  `#Msgpax.Bin<"\xFF">`          | binary        | `"\xFF"`
+  `%{foo: "bar"}`                | map           | `%{"foo" => "bar"}`
+  `[foo: "bar"]`                 | map           | `%{"foo" => "bar"}`
+  `[1, true]`                    | array         | `[1, true]`
+  `#Msgpax.Ext<4, "02:12">`      | extension     | `#Msgpax.Ext<4, "02:12">`
+
   """
 
   alias __MODULE__.Packer
@@ -59,12 +82,13 @@ defmodule Msgpax do
   end
 
   @doc """
-  De-serializes the given `iodata` in a "stream-oriented" fashion.
+  De-serializes part of the given `iodata`.
 
   This function works like `unpack/2`, but instead of requiring the input to be
   a MessagePack-serialized term with nothing after that, it accepts leftover
-  bytes at the end of `iodata`. It returns `{:ok, term, rest}` if
-  de-serialization is successful, `{:error, reason}` otherwise.
+  bytes at the end of `iodata` and only de-serializes the part of the input that
+  makes sense. It returns `{:ok, term, rest}` if de-serialization is successful,
+  `{:error, reason}` otherwise.
 
   See `unpack/2` for more information on the supported options.
 
