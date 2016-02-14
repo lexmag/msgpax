@@ -1,4 +1,7 @@
 defmodule Msgpax.Unpacker.Transform do
+  # This module is only used internally.
+  @moduledoc false
+
   import Macro, only: [pipe: 3]
 
   defmacro deftransform(format, to: value) do
@@ -19,6 +22,10 @@ defmodule Msgpax.Unpacker.Transform do
 end
 
 defmodule Msgpax.UnpackError do
+  @moduledoc """
+  Raises when there's an error in de-serializing some data into an Elixir term.
+  """
+
   defexception [:reason]
 
   def message(%__MODULE__{} = exception) do
@@ -38,6 +45,8 @@ defmodule Msgpax.UnpackError do
 end
 
 defmodule Msgpax.Unpacker do
+  @moduledoc false
+
   import __MODULE__.Transform
 
   def unpack(iodata, opts) do

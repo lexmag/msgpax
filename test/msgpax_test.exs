@@ -1,6 +1,8 @@
 defmodule MsgpaxTest do
   use Msgpax.Case, async: true
 
+  doctest Msgpax
+
   defp string(len),
     do: String.duplicate(".", len)
 

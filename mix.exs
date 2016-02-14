@@ -7,6 +7,7 @@ defmodule Msgpax.Mixfile do
      elixir: ">= 0.15.0",
      consolidate_protocols: Mix.env != :test,
      description: description,
+     deps: deps,
      package: package]
   end
 
@@ -22,5 +23,10 @@ defmodule Msgpax.Mixfile do
      contributors: ["Aleksei Magusev"],
      licenses: ["ISC"],
      links: %{"GitHub" => "https://github.com/lexmag/msgpax"}]
+  end
+
+  defp deps do
+    [{:earmark, ">= 0.0.0", only: :docs},
+     {:ex_doc, ">= 0.0.0", only: :docs}]
   end
 end
