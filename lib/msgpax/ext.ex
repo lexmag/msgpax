@@ -1,28 +1,28 @@
 defmodule Msgpax.Ext do
   @moduledoc """
-  A struct used to represent a [MessagePack
-  extension](https://github.com/msgpack/msgpack/blob/master/spec.md#formats-ext).
+  A struct used to represent the MessagePack [Extension
+  type](https://github.com/msgpack/msgpack/blob/master/spec.md#formats-ext).
 
   ## Examples
 
   Let's say we want to be able to serialize a custom type that consists of a
-  byte `b` repeated `reps` times. We could represent this as a `RepByte` struct
-  in Elixir:
+  byte `data` repeated `reps` times. We could represent this as a `RepByte`
+  struct in Elixir:
 
       defmodule RepByte do
-        defstruct [:b, :reps]
+        defstruct [:data, :reps]
       end
 
   A simple (albeit not space efficient) approach to encoding such data is simply
-  a binary containing `b` for `reps` times: `%RepByte{str: ?a, reps: 2}` would be
-  encoded as `"aa"`.
+  a binary containing `data` for `reps` times: `%RepByte{data: ?a, reps: 2}`
+  would be encoded as `"aa"`.
 
   We can now define the `Msgpax.Packer` protocol for the `RepByte` struct to
   tell `Msgpax` how to encode this struct (we'll choose `10` as an arbitrary
   integer to identify the type of this extension).
 
       defimpl Msgpax.Packer, for: RepByte do
-        def transform(%RepByte{b: b, reps: reps}) do
+        def transform(%RepByte{data: b, reps: reps}) do
           Msgpax.Ext.new(10, String.duplicate(<<b>>, reps))
           |> Msgpax.Packer.transform()
         end
@@ -30,7 +30,7 @@ defmodule Msgpax.Ext do
 
   Now, we can pack `RepByte`s:
 
-      iex> packed = Msgpax.pack!(%RepByte{b: ?a, reps: 3})
+      iex> packed = Msgpax.pack!(%RepByte{data: ?a, reps: 3})
       iex> Msgpax.unpack!(packed)
       #Msgpax.Ext<10, "aaa">
 

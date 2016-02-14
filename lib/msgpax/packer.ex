@@ -29,9 +29,10 @@ defprotocol Msgpax.Packer do
       bitstrings - i.e., the number of bits must be a multiple of 8)
     * binaries (or `Msgpax.Bin` structs) containing `2^32` or more bytes cannot
       be encoded
-    * maps with more than `2^32` elements cannot be encoded
-    * lists with more than `2^32` elements cannot be encoded
-    * integers bigger than `2^64` or smaller than `-2^63` cannot be encoded
+    * maps with more than `(2^32) - 1` elements cannot be encoded
+    * lists with more than `(2^32) - 1` elements cannot be encoded
+    * integers bigger than `(2^64) - 1` or smaller than `-2^63` cannot be
+      encoded
 
   """
 

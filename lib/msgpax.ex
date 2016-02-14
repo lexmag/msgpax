@@ -17,8 +17,8 @@ defmodule Msgpax do
   `{:error, reason}` otherwise. Reason can be:
 
     * `{:bad_arg, term}` - means that the given argument is not serializable. For
-      example, this is returned when you try to pack a bitstring (as only
-      binaries can be serialized).
+      example, this is returned when you try to pack bits instead of a binary
+      (as only binaries can be serialized).
     * `{:too_big, term}` - means that the given term is too big to be
       encoded. What "too big" means depends on the term being encoded; for
       example, integers larger than `18446744073709551616` are too big to be
