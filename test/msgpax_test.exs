@@ -37,6 +37,11 @@ defmodule MsgpaxTest do
     defstruct [:name]
   end
 
+  defmodule UserWithAge do
+    @derive [{Msgpax.Packer, fields: [:name]}]
+    defstruct [:name, :age]
+  end
+
   test "fixstring" do
     assert_format string(0), [160]
     assert_format string(31), [191]
@@ -202,5 +207,7 @@ defmodule MsgpaxTest do
     assert_raise Protocol.UndefinedError, fn ->
       Msgpax.pack!(%URI{})
     end
+
+    assert Msgpax.pack!(%UserWithAge{name: "Luke", age: 9}) == Msgpax.pack!(%{name: "Luke"})
   end
 end

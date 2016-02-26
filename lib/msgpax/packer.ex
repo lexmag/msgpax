@@ -91,8 +91,8 @@ defimpl Msgpax.Packer, for: BitString do
 end
 
 defimpl Msgpax.Packer, for: Map do
-  defmacro __deriving__(module, _, _opts) do
-    @protocol.Any.deriving(module)
+  defmacro __deriving__(module, _, opts) do
+    @protocol.Any.deriving(module, opts)
   end
 
   def transform(map) do
@@ -207,15 +207,21 @@ defimpl Msgpax.Packer, for: Msgpax.Ext do
 end
 
 defimpl Msgpax.Packer, for: Any do
-  defmacro __deriving__(module, _, _opts) do
-    deriving(module)
+  defmacro __deriving__(module, _, opts) do
+    deriving(module, opts)
   end
 
-  def deriving(module) do
+  def deriving(module, opts) do
+    extractor =
+      if fields = opts[:fields] do
+        quote(do: Map.take(struct, unquote(fields)))
+      else
+        quote(do: Map.from_struct(struct))
+      end
     quote do
       defimpl unquote(@protocol), for: unquote(module) do
         def transform(struct) do
-          Map.from_struct(struct)
+          unquote(extractor)
           |> @protocol.Map.transform
         end
       end
