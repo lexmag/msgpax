@@ -64,8 +64,23 @@ defmodule User do
   defstruct [:name]
 end
 
-Msgpax.pack!(%User{name: "Lex"})
-# => [<<129>>, [[[<<164>>, "name"], [<<163>>, "Lex"]]]]
+Msgpax.pack!(%User{name: "Juri"})
+# => [<<129>>, [[[<<164>>, "name"], [<<164>>, "Juri"]]]]
+```
+
+In the example above, information about the `User` struct is lost when decoding back to Elixir terms:
+
+```elixir
+%User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()
+# => %{"name" => "Juri"}
+```
+
+You can overcome this by using something like [Maptu][github-maptu]:
+
+```elixir
+map = %User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()
+Maptu.struct!(User, map)
+# => %User{name: "Juri"}
 ```
 
 ## License
@@ -76,3 +91,4 @@ This software is licensed under [the ISC license](LICENSE).
 [docs-msgpax]: http://hexdocs.pm/msgpax
 [docs-msgpax-bin]: http://hexdocs.pm/msgpax/Msgpax.Bin.html
 [docs-msgpax-ext]: http://hexdocs.pm/msgpax/Msgpax.Ext.html
+[github-maptu]: https://github.com/whatyouhide/maptu
