@@ -34,6 +34,18 @@ defprotocol Msgpax.Packer do
     * integers bigger than `(2^64) - 1` or smaller than `-2^63` cannot be
       encoded
 
+  ## Serializing a subset of fields for structs
+
+  The `Msgpax.Packer` protocol supports serialization of only a subset of the
+  fields of a struct when derived. For example:
+
+      defmodule User do
+        @derive [{Msgpax.Packer, fields: [:name]}]
+        defstruct [:name, :sensitive_data]
+      end
+
+  In the example, packing `User` will only serialize the `:name` field and leave
+  out the `:sensitive_data` field.
   """
 
   @doc """
