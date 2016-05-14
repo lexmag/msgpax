@@ -46,6 +46,24 @@ defprotocol Msgpax.Packer do
 
   In the example, packing `User` will only serialize the `:name` field and leave
   out the `:sensitive_data` field.
+
+  ## Unpacking back to Elixir structs
+
+  When packing a struct, that struct will be packed as the underlying map
+  (without the `:__struct__` key). This means that the information about what
+  struct it originally was is lost:
+
+      %User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()
+      #=> %{"name" => "Juri"}
+
+  This can easily be solved by using something like
+  [Maptu](https://github.com/whatyouhide/maptu), which helps to reconstruct
+  structs:
+
+      map = %User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()
+      Maptu.struct!(User, map)
+      #=> %User{name: "Juri"}
+
   """
 
   @doc """
