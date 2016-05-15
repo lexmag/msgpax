@@ -42,6 +42,11 @@ defmodule MsgpaxTest do
     defstruct [:name, :age]
   end
 
+  defmodule UserDerivingStruct do
+    @derive [{Msgpax.Packer, fields: [:name, :__struct__]}]
+    defstruct [:name]
+  end
+
   test "fixstring" do
     assert_format string(0), [160]
     assert_format string(31), [191]
@@ -209,5 +214,8 @@ defmodule MsgpaxTest do
     end
 
     assert Msgpax.pack!(%UserWithAge{name: "Luke", age: 9}) == Msgpax.pack!(%{name: "Luke"})
+
+    expected = Msgpax.pack!(%{"__struct__" => UserDerivingStruct, name: "Juri"})
+    assert Msgpax.pack!(%UserDerivingStruct{name: "Juri"}) == expected
   end
 end

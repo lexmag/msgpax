@@ -45,23 +45,36 @@ defprotocol Msgpax.Packer do
       end
 
   In the example, packing `User` will only serialize the `:name` field and leave
-  out the `:sensitive_data` field.
+  out the `:sensitive_data` field. By default, the `:__struct__` field is taken
+  out of the struct before packing it. If you want this field to be present in
+  the packed map, you have to specifically list it in the `:fields` option.
 
   ## Unpacking back to Elixir structs
 
-  When packing a struct, that struct will be packed as the underlying map
-  (without the `:__struct__` key). This means that the information about what
-  struct it originally was is lost:
+  When packing a struct, that struct will be packed as the underlying map and
+  will be unpacked with string keys instead of atom keys. This makes it hard to
+  reconstruct the map as tools like `Kernel.struct/2` can't be used (given keys
+  are strings). Also, unless specifically stated in the `:fields` option, the
+  `:__struct__` field is lost when packing a struct, so information about
+  *which* struct it was is lost.
 
       %User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()
       #=> %{"name" => "Juri"}
 
-  This can easily be solved by using something like
+  These things can be overcome by using something like
   [Maptu](https://github.com/whatyouhide/maptu), which helps to reconstruct
   structs:
 
       map = %User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()
       Maptu.struct!(User, map)
+      #=> %User{name: "Juri"}
+
+      map =
+        %{"__struct__" => "Elixir.User", "name" => "Juri"}
+        |> Msgpax.pack!()
+        |> Msgpax.unpack!()
+
+      Maptu.struct!(map)
       #=> %User{name: "Juri"}
 
   """
@@ -242,12 +255,18 @@ defimpl Msgpax.Packer, for: Any do
   end
 
   def deriving(module, opts) do
+    fields = opts[:fields]
     extractor =
-      if fields = opts[:fields] do
-        quote(do: Map.take(struct, unquote(fields)))
-      else
-        quote(do: Map.from_struct(struct))
+      cond do
+        fields && :__struct__ in fields ->
+          fields = List.delete(fields, :__struct__)
+          quote(do: Map.take(struct, unquote(fields)) |> Map.put("__struct__", unquote(module)))
+        fields ->
+          quote(do: Map.take(struct, unquote(fields)))
+        true ->
+          quote(do: Map.from_struct(struct))
       end
+
     quote do
       defimpl unquote(@protocol), for: unquote(module) do
         def transform(struct) do
