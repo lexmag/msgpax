@@ -101,8 +101,8 @@ defmodule Msgpax do
       {:error, {:bad_format, 163}}
 
   """
-  def unpack_slice(iodata, opts \\ %{}) do
-    Unpacker.unpack(iodata, opts)
+  def unpack_slice(iodata, opts \\ []) do
+    Unpacker.unpack(iodata, Enum.into(opts, %{}))
   end
 
   @doc """
@@ -121,8 +121,8 @@ defmodule Msgpax do
       ** (Msgpax.UnpackError) bad format: 163
 
   """
-  def unpack_slice!(iodata, opts \\ %{}) do
-    Unpacker.unpack!(iodata, opts)
+  def unpack_slice!(iodata, opts \\ []) do
+    Unpacker.unpack!(iodata, Enum.into(opts, %{}))
   end
 
   @doc """
@@ -145,13 +145,13 @@ defmodule Msgpax do
       {:error, {:extra_bytes, "junk"}}
 
       iex> packed = Msgpax.pack!(Msgpax.Bin.new(<<3, 18, 122, 27, 115>>))
-      iex> {:ok, bin} = Msgpax.unpack(packed, %{binary: true})
+      iex> {:ok, bin} = Msgpax.unpack(packed, binary: true)
       iex> bin
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
-  def unpack(iodata, opts \\ %{}) do
-    case unpack_slice(iodata, opts) do
+  def unpack(iodata, opts \\ []) do
+    case unpack_slice(iodata, Enum.into(opts, %{})) do
       {:ok, value, <<>>} ->
         {:ok, value}
       {:ok, _, bytes} ->
@@ -177,12 +177,12 @@ defmodule Msgpax do
       ** (Msgpax.UnpackError) extra bytes follow after packet: "junk"
 
       iex> packed = Msgpax.pack!(Msgpax.Bin.new(<<3, 18, 122, 27, 115>>))
-      iex> Msgpax.unpack!(packed, %{binary: true})
+      iex> Msgpax.unpack!(packed, binary: true)
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
-  def unpack!(iodata, opts \\ %{}) do
-    case unpack(iodata, opts) do
+  def unpack!(iodata, opts \\ []) do
+    case unpack(iodata, Enum.into(opts, %{})) do
       {:ok, value} -> value
       {:error, reason} ->
         raise Msgpax.UnpackError, reason: reason
