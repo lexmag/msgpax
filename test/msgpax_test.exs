@@ -70,8 +70,8 @@ defmodule MsgpaxTest do
     assert_format bytes(1), [0xC4, 1], string(1)
     assert_format bytes(255), [0xC4, 255], string(255)
 
-    assert_format bytes(1), [0xC4, 1], {bytes(1), %{binary: true}}
-    assert_format bytes(255), [0xC4, 255], {bytes(255), %{binary: true}}
+    assert_format bytes(1), [0xC4, 1], {bytes(1), [binary: true]}
+    assert_format bytes(255), [0xC4, 255], {bytes(255), [binary: true]}
   end
 
   test "binary 16" do
