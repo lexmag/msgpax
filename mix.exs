@@ -1,14 +1,20 @@
 defmodule Msgpax.Mixfile do
   use Mix.Project
 
+  @version "0.8.2"
+
   def project do
     [app: :msgpax,
-     version: "0.8.2",
+     version: @version,
      elixir: "~> 1.0",
      consolidate_protocols: Mix.env != :test,
      description: description(),
      deps: deps(),
-     package: package()]
+     package: package(),
+     name: "Msgpax",
+     docs: [main: "Msgpax",
+            source_ref: "v#{@version}",
+            source_url: "https://github.com/lexmag/msgpax"]]
   end
 
   def application(), do: []
