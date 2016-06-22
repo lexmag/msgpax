@@ -27,6 +27,17 @@ defmodule Msgpax do
 
   """
 
+  @type pack_error_reason ::
+    {:too_big, any} |
+    {:not_encodable, any}
+
+  @type unpack_error_reason ::
+    {:excess_bytes, binary} |
+    {:bad_format, binary} |
+    :incomplete |
+    {:not_supported_ext, integer} |
+    {:ext_unpack_failure, Msgpax.Ext.type, module, binary}
+
   alias __MODULE__.Packer
   alias __MODULE__.Unpacker
 
@@ -57,6 +68,7 @@ defmodule Msgpax do
       {:error, {:too_big, 20000000000000000000}}
 
   """
+  @spec pack(term) :: {:ok, iodata} | {:error, pack_error_reason}
   def pack(term) do
     Packer.pack(term)
   end
@@ -74,9 +86,10 @@ defmodule Msgpax do
       <<163, 102, 111, 111>>
 
       iex> Msgpax.pack!(20000000000000000000)
-      ** (Msgpax.PackError) too big value: 20000000000000000000
+      ** (Msgpax.PackError) value is too big: 20000000000000000000
 
   """
+  @spec pack!(term) :: iodata | no_return
   def pack!(term) do
     Packer.pack!(term)
   end
@@ -101,6 +114,7 @@ defmodule Msgpax do
       {:error, {:bad_format, 163}}
 
   """
+  @spec unpack_slice(iodata, Keyword.t) :: {:ok, any, binary} | {:error, unpack_error_reason}
   def unpack_slice(iodata, opts \\ []) do
     Unpacker.unpack(iodata, Enum.into(opts, %{}))
   end
@@ -121,6 +135,7 @@ defmodule Msgpax do
       ** (Msgpax.UnpackError) bad format: 163
 
   """
+  @spec unpack_slice!(iodata, Keyword.t) :: {any, binary} | no_return
   def unpack_slice!(iodata, opts \\ []) do
     Unpacker.unpack!(iodata, Enum.into(opts, %{}))
   end
@@ -142,7 +157,7 @@ defmodule Msgpax do
       {:ok, "foo"}
 
       iex> Msgpax.unpack(<<163, "foo", "junk">>)
-      {:error, {:extra_bytes, "junk"}}
+      {:error, {:excess_bytes, "junk"}}
 
       iex> packed = Msgpax.pack!(Msgpax.Bin.new(<<3, 18, 122, 27, 115>>))
       iex> {:ok, bin} = Msgpax.unpack(packed, binary: true)
@@ -150,12 +165,13 @@ defmodule Msgpax do
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
+  @spec unpack(iodata, Keyword.t) :: {:ok, any} | {:error, unpack_error_reason}
   def unpack(iodata, opts \\ []) do
     case unpack_slice(iodata, Enum.into(opts, %{})) do
       {:ok, value, <<>>} ->
         {:ok, value}
       {:ok, _, bytes} ->
-        {:error, {:extra_bytes, bytes}}
+        {:error, {:excess_bytes, bytes}}
       {:error, _} = error ->
         error
     end
@@ -174,13 +190,14 @@ defmodule Msgpax do
       "foo"
 
       iex> Msgpax.unpack!(<<163, "foo", "junk">>)
-      ** (Msgpax.UnpackError) extra bytes follow after packet: "junk"
+      ** (Msgpax.UnpackError) found excess bytes: "junk"
 
       iex> packed = Msgpax.pack!(Msgpax.Bin.new(<<3, 18, 122, 27, 115>>))
       iex> Msgpax.unpack!(packed, binary: true)
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
+  @spec unpack!(iodata, Keyword.t) :: any | no_return
   def unpack!(iodata, opts \\ []) do
     case unpack(iodata, Enum.into(opts, %{})) do
       {:ok, value} -> value
