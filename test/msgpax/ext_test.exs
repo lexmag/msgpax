@@ -8,28 +8,26 @@ defmodule Msgpax.ExtTest do
       %__MODULE__{seed: seed, size: size}
     end
 
-    def pack(%{seed: seed, size: size}) do
-      Msgpax.Ext.new(42, String.duplicate(seed, size))
-    end
+    @behaviour Msgpax.Ext.Unpacker
 
-    def unpack(42, <<>>) do
+    def unpack(%Msgpax.Ext{type: 42, data: <<>>}) do
       {:ok, new(<<>>, 0)}
     end
 
-    def unpack(42, <<char, _::bytes>> = data) do
+    def unpack(%Msgpax.Ext{type: 42, data: <<char, _::bytes>> = data}) do
       {:ok, new(<<char>>, byte_size(data))}
     end
 
     defimpl Msgpax.Packer do
-      def transform(sample) do
-        @for.pack(sample)
+      def transform(%Sample{seed: seed, size: size}) do
+        Msgpax.Ext.new(42, String.duplicate(seed, size))
         |> @protocol.Msgpax.Ext.transform()
       end
     end
   end
 
   defmodule Broken do
-    def unpack(_type, _data) do
+    def unpack(%Msgpax.Ext{}) do
       :error
     end
   end

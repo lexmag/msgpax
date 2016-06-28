@@ -160,7 +160,7 @@ defmodule Msgpax.Unpacker do
   end
 
   defp ext(type, data, %{ext: module}) when is_atom(module) do
-    case module.unpack(type, data) do
+    case module.unpack(Msgpax.Ext.new(type, data)) do
       {:ok, result} -> result
       :error ->
         throw {:ext_unpack_failure, type, module, data}
