@@ -149,7 +149,19 @@ defmodule Msgpax do
   """
   @spec unpack_slice(iodata, Keyword.t) :: {:ok, any, binary} | {:error, unpack_error_reason}
   def unpack_slice(iodata, opts \\ []) do
-    Unpacker.unpack(iodata, Enum.into(opts, %{}))
+    opts = Enum.into(opts, %{})
+
+    try do
+      iodata
+      |> IO.iodata_to_binary()
+      |> Unpacker.unpack(opts)
+    catch
+      :throw, reason ->
+        {:error, reason}
+    else
+      {value, rest} ->
+        {:ok, value, rest}
+    end
   end
 
   @doc """
@@ -170,7 +182,12 @@ defmodule Msgpax do
   """
   @spec unpack_slice!(iodata, Keyword.t) :: {any, binary} | no_return
   def unpack_slice!(iodata, opts \\ []) do
-    Unpacker.unpack!(iodata, Enum.into(opts, %{}))
+    case unpack_slice(iodata, opts) do
+      {:ok, value, rest} ->
+        {value, rest}
+      {:error, reason} ->
+        raise Msgpax.UnpackError, reason: reason
+    end
   end
 
   @doc """
@@ -202,7 +219,7 @@ defmodule Msgpax do
   """
   @spec unpack(iodata, Keyword.t) :: {:ok, any} | {:error, unpack_error_reason}
   def unpack(iodata, opts \\ []) do
-    case unpack_slice(iodata, Enum.into(opts, %{})) do
+    case unpack_slice(iodata, opts) do
       {:ok, value, <<>>} ->
         {:ok, value}
       {:ok, _, bytes} ->
@@ -234,8 +251,9 @@ defmodule Msgpax do
   """
   @spec unpack!(iodata, Keyword.t) :: any | no_return
   def unpack!(iodata, opts \\ []) do
-    case unpack(iodata, Enum.into(opts, %{})) do
-      {:ok, value} -> value
+    case unpack(iodata, opts) do
+      {:ok, value} ->
+        value
       {:error, reason} ->
         raise Msgpax.UnpackError, reason: reason
     end
