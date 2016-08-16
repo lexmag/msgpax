@@ -19,9 +19,9 @@ defmodule Msgpax.ExtTest do
     end
 
     defimpl Msgpax.Packer do
-      def transform(%Sample{seed: seed, size: size}) do
+      def pack(%Sample{seed: seed, size: size}) do
         Msgpax.Ext.new(42, String.duplicate(seed, size))
-        |> @protocol.Msgpax.Ext.transform()
+        |> @protocol.Msgpax.Ext.pack()
       end
     end
   end

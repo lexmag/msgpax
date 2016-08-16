@@ -22,9 +22,9 @@ defmodule Msgpax.Ext do
   integer to identify the type of this extension).
 
       defimpl Msgpax.Packer, for: RepByte do
-        def transform(%RepByte{data: b, reps: reps}) do
+        def pack(%RepByte{data: b, reps: reps}) do
           Msgpax.Ext.new(10, String.duplicate(<<b>>, reps))
-          |> Msgpax.Packer.transform()
+          |> Msgpax.Packer.pack()
         end
       end
 

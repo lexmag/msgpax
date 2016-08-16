@@ -70,7 +70,7 @@ defmodule Msgpax do
   """
   @spec pack(term) :: {:ok, iodata} | {:error, pack_error_reason}
   def pack(term) do
-    {:ok, Packer.transform(term)}
+    {:ok, Packer.pack(term)}
   catch
     :throw, reason ->
       {:error, reason}

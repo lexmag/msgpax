@@ -84,25 +84,25 @@ defprotocol Msgpax.Packer do
 
   It returns an iodata result.
   """
-  def transform(term)
+  def pack(term)
 end
 
 defimpl Msgpax.Packer, for: Atom do
-  def transform(nil),   do: <<0xC0>>
-  def transform(false), do: <<0xC2>>
-  def transform(true),  do: <<0xC3>>
-  def transform(atom) do
+  def pack(nil),   do: <<0xC0>>
+  def pack(false), do: <<0xC2>>
+  def pack(true),  do: <<0xC3>>
+  def pack(atom) do
     Atom.to_string(atom)
-    |> @protocol.transform
+    |> @protocol.pack
   end
 end
 
 defimpl Msgpax.Packer, for: BitString do
-  def transform(bin) when is_binary(bin) do
+  def pack(bin) when is_binary(bin) do
     [format(bin) | bin]
   end
 
-  def transform(bits) do
+  def pack(bits) do
     throw {:not_encodable, bits}
   end
 
@@ -124,9 +124,9 @@ defimpl Msgpax.Packer, for: Map do
     @protocol.Any.deriving(module, opts)
   end
 
-  def transform(map) do
+  def pack(map) do
     for {key, value} <- map, into: [format(map)] do
-      [@protocol.transform(key) | @protocol.transform(value)]
+      [@protocol.pack(key) | @protocol.pack(value)]
     end
   end
 
@@ -143,13 +143,13 @@ defimpl Msgpax.Packer, for: Map do
 end
 
 defimpl Msgpax.Packer, for: List do
-  def transform([{}]), do: <<128>>
-  def transform([{_, _} | _] = list),
-    do: @protocol.Map.transform(list)
+  def pack([{}]), do: <<128>>
+  def pack([{_, _} | _] = list),
+    do: @protocol.Map.pack(list)
 
-  def transform(list) do
+  def pack(list) do
     for elem <- list, into: [format(list)] do
-      @protocol.transform(elem)
+      @protocol.pack(elem)
     end
   end
 
@@ -166,13 +166,13 @@ defimpl Msgpax.Packer, for: List do
 end
 
 defimpl Msgpax.Packer, for: Float do
-  def transform(num) do
+  def pack(num) do
     <<0xCB, num::64-float>>
   end
 end
 
 defimpl Msgpax.Packer, for: Integer do
-  def transform(num) when num < 0 do
+  def pack(num) when num < 0 do
     cond do
       num >= -32                 -> <<0b111::3, num::5>>
       num >= -128                -> <<0xD0, num>>
@@ -184,7 +184,7 @@ defimpl Msgpax.Packer, for: Integer do
     end
   end
 
-  def transform(num) do
+  def pack(num) do
     cond do
       num < 128                 -> <<0::1, num::7>>
       num < 256                 -> <<0xCC, num>>
@@ -198,7 +198,7 @@ defimpl Msgpax.Packer, for: Integer do
 end
 
 defimpl Msgpax.Packer, for: Msgpax.Bin do
-  def transform(%{data: bin}) when is_binary(bin),
+  def pack(%{data: bin}) when is_binary(bin),
     do: [format(bin) | bin]
 
   defp format(bin) do
@@ -214,7 +214,7 @@ defimpl Msgpax.Packer, for: Msgpax.Bin do
 end
 
 defimpl Msgpax.Packer, for: Msgpax.Ext do
-  def transform(%{type: type, data: data}) do
+  def pack(%{type: type, data: data}) do
     [format(data), type | data]
   end
 
@@ -255,15 +255,15 @@ defimpl Msgpax.Packer, for: Any do
 
     quote do
       defimpl unquote(@protocol), for: unquote(module) do
-        def transform(struct) do
+        def pack(struct) do
           unquote(extractor)
-          |> @protocol.Map.transform
+          |> @protocol.Map.pack
         end
       end
     end
   end
 
-  def transform(term) do
+  def pack(term) do
     raise Protocol.UndefinedError,
       protocol: @protocol, value: term
   end
