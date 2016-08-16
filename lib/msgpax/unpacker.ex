@@ -23,23 +23,23 @@ end
 
 defmodule Msgpax.UnpackError do
   @moduledoc """
-  Raises when there's an error in de-serializing some data into an Elixir term.
+  Raised when there's an error in de-serializing some data into an Elixir term.
   """
 
   defexception [:reason]
 
   def message(%__MODULE__{} = exception) do
-    case exception.reason() do
-      {:extra_bytes, bin} ->
-        "extra bytes follow after packet: #{inspect(bin)}"
+    case exception.reason do
+      {:excess_bytes, bin} ->
+        "found excess bytes: #{inspect(bin)}"
       {:bad_format, bin} ->
         "bad format: #{inspect(bin)}"
       :incomplete ->
-        "packet is incomplete"
-      {:bad_ext_type, type} ->
-        "bad extension type: #{type}"
-      {:broken_ext, type, data} ->
-        "unable to unpack type #{type} extension data: #{inspect(data)}"
+        "given binary is incomplete"
+      {:not_supported_ext, type} ->
+        "extension type is not supported: #{type}"
+      {:ext_unpack_failure, type, module, data} ->
+        "module #{inspect(module)} could not unpack data (extension type #{type}): #{inspect(data)}"
     end
   end
 end
@@ -156,14 +156,14 @@ defmodule Msgpax.Unpacker do
   end
 
   defp ext(_rest, _opts, type, _data) do
-    throw {:bad_ext_type, type}
+    throw {:not_supported_ext, type}
   end
 
   defp ext(type, data, %{ext: module}) when is_atom(module) do
-    case module.unpack(type, data) do
+    case module.unpack(Msgpax.Ext.new(type, data)) do
       {:ok, result} -> result
       :error ->
-        throw {:broken_ext, type, data}
+        throw {:ext_unpack_failure, type, module, data}
     end
   end
 

@@ -8,28 +8,26 @@ defmodule Msgpax.ExtTest do
       %__MODULE__{seed: seed, size: size}
     end
 
-    def pack(%{seed: seed, size: size}) do
-      Msgpax.Ext.new(42, String.duplicate(seed, size))
-    end
+    @behaviour Msgpax.Ext.Unpacker
 
-    def unpack(42, <<>>) do
+    def unpack(%Msgpax.Ext{type: 42, data: <<>>}) do
       {:ok, new(<<>>, 0)}
     end
 
-    def unpack(42, <<char, _::bytes>> = data) do
+    def unpack(%Msgpax.Ext{type: 42, data: <<char, _::bytes>> = data}) do
       {:ok, new(<<char>>, byte_size(data))}
     end
 
     defimpl Msgpax.Packer do
-      def transform(sample) do
-        @for.pack(sample)
+      def transform(%Sample{seed: seed, size: size}) do
+        Msgpax.Ext.new(42, String.duplicate(seed, size))
         |> @protocol.Msgpax.Ext.transform()
       end
     end
   end
 
   defmodule Broken do
-    def unpack(_type, _data) do
+    def unpack(%Msgpax.Ext{}) do
       :error
     end
   end
@@ -87,11 +85,11 @@ defmodule Msgpax.ExtTest do
 
   test "broken ext" do
     assert {:error, reason} = Msgpax.unpack(<<0xD4, 42, 65>>, %{ext: Broken})
-    assert reason == {:broken_ext, 42, "A"}
+    assert reason == {:ext_unpack_failure, 42, Broken, "A"}
   end
 
   test "bad ext type" do
     assert {:error, reason} = Msgpax.unpack(<<0xD4, -1, 65>>)
-    assert reason == {:bad_ext_type, 255}
+    assert reason == {:not_supported_ext, 255}
   end
 end

@@ -21,7 +21,7 @@ defmodule Msgpax.PlugParserTest do
 
   test "bad MessagePack-encoded body" do
     conn = conn(:post, "/", "bad body")
-    assert_raise Plug.Parsers.ParseError, ~r/extra bytes follow after packet/, fn ->
+    assert_raise Plug.Parsers.ParseError, ~r/found excess bytes/, fn ->
       Msgpax.PlugParser.parse(conn, "application", "msgpack", [], [])
     end
   end

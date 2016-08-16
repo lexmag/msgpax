@@ -1,16 +1,16 @@
 defmodule Msgpax.PackError do
   @moduledoc """
-  Raises when there's an error in serializing an Elixir term.
+  Raised when there's an error in serializing an Elixir term.
   """
 
   defexception [:reason]
 
   def message(%__MODULE__{} = exception) do
-    case exception.reason() do
+    case exception.reason do
       {:too_big, term} ->
-        "too big value: #{inspect(term)}"
-      {:bad_arg, term} ->
-        "unprocessable value: #{inspect(term)}"
+        "value is too big: #{inspect(term)}"
+      {:not_encodable, term} ->
+        "value is not encodable: #{inspect(term)}"
     end
   end
 end
@@ -115,10 +115,13 @@ defimpl Msgpax.Packer, for: Atom do
 end
 
 defimpl Msgpax.Packer, for: BitString do
-  def transform(bin) when is_binary(bin),
-    do: [format(bin) | bin]
+  def transform(bin) when is_binary(bin) do
+    [format(bin) | bin]
+  end
 
-  def transform(bits), do: throw({:bad_arg, bits})
+  def transform(bits) do
+    throw {:not_encodable, bits}
+  end
 
   defp format(bin) do
     size = byte_size(bin)
