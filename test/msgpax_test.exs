@@ -188,6 +188,20 @@ defmodule MsgpaxTest do
     assert_error pack([true, -9223372036854775809]), {:too_big, -9223372036854775809}
   end
 
+  test "pack/2: using the :iodata option" do
+    assert Msgpax.pack([], iodata: true) == {:ok, [<<144>>]}
+    assert Msgpax.pack([], iodata: false) == {:ok, <<144>>}
+    assert Msgpax.pack([42, <<5::3>>], iodata: false) == {:error, {:not_encodable, <<5::3>>}}
+  end
+
+  test "pack!/2: using the :iodata option" do
+    assert Msgpax.pack!([], iodata: true) == [<<144>>]
+    assert Msgpax.pack!([], iodata: false) == <<144>>
+    assert_raise Msgpax.PackError, fn ->
+      Msgpax.pack!([42, <<5::3>>], iodata: false)
+    end
+  end
+
   test "excess bytes" do
     assert_error unpack(<<255, 1, 2>>), {:excess_bytes, <<1, 2>>}
   end

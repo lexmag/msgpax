@@ -44,8 +44,9 @@ defmodule Msgpax do
   @doc """
   Serializes `term`.
 
-  This function returns iodata; if you want to force the result to be a binary,
-  you can use `IO.iodata_to_binary/1`.
+  This function returns iodata by default; if you want to force the result to be
+  a binary, you can use `IO.iodata_to_binary/1` or use the `:iodata` option (see
+  the "Options" section below).
 
   This function returns `{:ok, iodata}` if the serialization is sucessful,
   `{:error, reason}` otherwise. Reason can be:
@@ -58,6 +59,11 @@ defmodule Msgpax do
       example, integers larger than `18446744073709551616` are too big to be
       encoded with MessagePack.
 
+  ## Options
+
+    * `:iodata` - (boolean) if `true`, this function returns the encoded term as
+      iodata, if `false` as a binary.
+
   ## Examples
 
       iex> {:ok, packed} = Msgpax.pack("foo")
@@ -67,13 +73,25 @@ defmodule Msgpax do
       iex> Msgpax.pack(20000000000000000000)
       {:error, {:too_big, 20000000000000000000}}
 
+      iex> Msgpax.pack("foo", iodata: false)
+      {:ok, <<163, 102, 111, 111>>}
+
   """
-  @spec pack(term) :: {:ok, iodata} | {:error, pack_error_reason}
-  def pack(term) do
-    {:ok, Packer.pack(term)}
-  catch
-    :throw, reason ->
-      {:error, reason}
+  @spec pack(term, Keyword.t) :: {:ok, iodata} | {:error, pack_error_reason}
+  def pack(term, options \\ []) do
+    iodata? = Keyword.get(options, :iodata, true)
+
+    try do
+      Packer.pack(term)
+    catch
+      :throw, reason ->
+        {:error, reason}
+    else
+      iodata when iodata? ->
+        {:ok, iodata}
+      iodata ->
+        {:ok, IO.iodata_to_binary(iodata)}
+    end
   end
 
   @doc """
@@ -83,6 +101,10 @@ defmodule Msgpax do
   `{:ok, term}`) if the serialization is successful and raises a
   `Msgpax.PackError` exception otherwise.
 
+  ## Options
+
+  This function accepts the same options as `pack/2`.
+
   ## Examples
 
       iex> "foo" |> Msgpax.pack!() |> IO.iodata_to_binary()
@@ -91,10 +113,13 @@ defmodule Msgpax do
       iex> Msgpax.pack!(20000000000000000000)
       ** (Msgpax.PackError) value is too big: 20000000000000000000
 
+      iex> Msgpax.pack!("foo", iodata: false)
+      <<163, 102, 111, 111>>
+
   """
-  @spec pack!(term) :: iodata | no_return
-  def pack!(term) do
-    case pack(term) do
+  @spec pack!(term, Keyword.t) :: iodata | no_return
+  def pack!(term, options \\ []) do
+    case pack(term, options) do
       {:ok, result} ->
         result
       {:error, reason} ->
