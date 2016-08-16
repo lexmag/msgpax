@@ -85,23 +85,6 @@ defprotocol Msgpax.Packer do
   It returns an iodata result.
   """
   def transform(term)
-
-  @doc false
-  Kernel.def pack(term) do
-    {:ok, transform(term)}
-  catch
-    :throw, reason ->
-      {:error, reason}
-  end
-
-  @doc false
-  Kernel.def pack!(term) do
-    case pack(term) do
-      {:ok, bin} -> bin
-      {:error, reason} ->
-        raise Msgpax.PackError, reason: reason
-    end
-  end
 end
 
 defimpl Msgpax.Packer, for: Atom do
