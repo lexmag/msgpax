@@ -59,9 +59,9 @@ defmodule Msgpax.Unpacker do
   defunpack [0xDB, len::32-integer, val::size(len)-bytes], to: val
 
   # Binary
-  defunpack [0xC4, len::integer, val::size(len)-bytes], do: binary(val)
-  defunpack [0xC5, len::16-integer, val::size(len)-bytes], do: binary(val)
-  defunpack [0xC6, len::32-integer, val::size(len)-bytes], do: binary(val)
+  defunpack [0xC4, len::integer, val::size(len)-bytes], do: unpack_binary(val)
+  defunpack [0xC5, len::16-integer, val::size(len)-bytes], do: unpack_binary(val)
+  defunpack [0xC6, len::32-integer, val::size(len)-bytes], do: unpack_binary(val)
 
   # Float
   defunpack [0xCA, val::32-big-float], to: val
@@ -81,25 +81,25 @@ defmodule Msgpax.Unpacker do
   defunpack [0xD3, val::64-signed-integer], to: val
 
   # Array
-  defunpack [0b1001::4, len::4], do: list(len)
-  defunpack [0xDC, len::16], do: list(len)
-  defunpack [0xDD, len::32], do: list(len)
+  defunpack [0b1001::4, len::4], do: unpack_list(len)
+  defunpack [0xDC, len::16], do: unpack_list(len)
+  defunpack [0xDD, len::32], do: unpack_list(len)
 
   # Map
-  defunpack [0b1000::4, len::4], do: map(len)
-  defunpack [0xDE, len::16], do: map(len)
-  defunpack [0xDF, len::32], do: map(len)
+  defunpack [0b1000::4, len::4], do: unpack_map(len)
+  defunpack [0xDE, len::16], do: unpack_map(len)
+  defunpack [0xDF, len::32], do: unpack_map(len)
 
   # Extension
-  defunpack [0xD4, type, val::1-bytes], do: ext(type, val)
-  defunpack [0xD5, type, val::2-bytes], do: ext(type, val)
-  defunpack [0xD6, type, val::4-bytes], do: ext(type, val)
-  defunpack [0xD7, type, val::8-bytes], do: ext(type, val)
-  defunpack [0xD8, type, val::16-bytes], do: ext(type, val)
+  defunpack [0xD4, type, val::1-bytes], do: unpack_ext(type, val)
+  defunpack [0xD5, type, val::2-bytes], do: unpack_ext(type, val)
+  defunpack [0xD6, type, val::4-bytes], do: unpack_ext(type, val)
+  defunpack [0xD7, type, val::8-bytes], do: unpack_ext(type, val)
+  defunpack [0xD8, type, val::16-bytes], do: unpack_ext(type, val)
 
-  defunpack [0xC7, len, type, val::size(len)-bytes], do: ext(type, val)
-  defunpack [0xC8, len::16, type, val::size(len)-bytes], do: ext(type, val)
-  defunpack [0xC9, len::32, type, val::size(len)-bytes], do: ext(type, val)
+  defunpack [0xC7, len, type, val::size(len)-bytes], do: unpack_ext(type, val)
+  defunpack [0xC8, len::16, type, val::size(len)-bytes], do: unpack_ext(type, val)
+  defunpack [0xC9, len::32, type, val::size(len)-bytes], do: unpack_ext(type, val)
 
   def unpack(<<bin, _::bytes>>, _opts),
     do: throw({:bad_format, bin})
@@ -107,40 +107,40 @@ defmodule Msgpax.Unpacker do
   def unpack(<<_::bits>>, _opts),
     do: throw(:incomplete)
 
-  defp binary(rest, %{binary: true}, val),
+  defp unpack_binary(rest, %{binary: true}, val),
     do: {Msgpax.Bin.new(val), rest}
 
-  defp binary(rest, _opts, val),
+  defp unpack_binary(rest, _opts, val),
     do: {val, rest}
 
-  defp list(rest, opts, len, acc \\ [])
-  defp list(rest, _opts, 0, acc),
+  defp unpack_list(rest, opts, len, acc \\ [])
+  defp unpack_list(rest, _opts, 0, acc),
     do: {Enum.reverse(acc), rest}
 
-  defp list(rest, opts, len, acc) do
+  defp unpack_list(rest, opts, len, acc) do
     {val, rest} = unpack(rest, opts)
-    list(rest, opts, len - 1, [val | acc])
+    unpack_list(rest, opts, len - 1, [val | acc])
   end
 
-  defp map(rest, opts, len, acc \\ [])
-  defp map(rest, _opts, 0, acc),
+  defp unpack_map(rest, opts, len, acc \\ [])
+  defp unpack_map(rest, _opts, 0, acc),
     do: {Enum.into(Enum.reverse(acc), %{}), rest}
 
-  defp map(rest, opts, len, acc) do
+  defp unpack_map(rest, opts, len, acc) do
     {key, rest} = unpack(rest, opts)
     {val, rest} = unpack(rest, opts)
-    map(rest, opts, len - 1, [{key, val} | acc])
+    unpack_map(rest, opts, len - 1, [{key, val} | acc])
   end
 
-  defp ext(rest, opts, type, data) when type in 0..127 do
-    {ext(type, data, opts), rest}
+  defp unpack_ext(rest, opts, type, data) when type in 0..127 do
+    {unpack_ext(type, data, opts), rest}
   end
 
-  defp ext(_rest, _opts, type, _data) do
+  defp unpack_ext(_rest, _opts, type, _data) do
     throw {:not_supported_ext, type}
   end
 
-  defp ext(type, data, %{ext: module}) when is_atom(module) do
+  defp unpack_ext(type, data, %{ext: module}) when is_atom(module) do
     case module.unpack(Msgpax.Ext.new(type, data)) do
       {:ok, result} -> result
       :error ->
@@ -148,7 +148,7 @@ defmodule Msgpax.Unpacker do
     end
   end
 
-  defp ext(type, data, _opts) do
+  defp unpack_ext(type, data, _opts) do
     Msgpax.Ext.new(type, data)
   end
 end
