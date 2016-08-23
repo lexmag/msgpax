@@ -25,8 +25,7 @@ defmodule Msgpax.Mixfile do
   end
 
   defp package() do
-    [files: ["lib", "mix.exs", "README.md", "LICENSE"],
-     maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
+    [maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
      licenses: ["ISC"],
      links: %{"GitHub" => "https://github.com/lexmag/msgpax"}]
   end
