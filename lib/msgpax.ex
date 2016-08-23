@@ -1,5 +1,5 @@
 defmodule Msgpax do
-  @moduledoc """
+  @moduledoc ~S"""
   This module provides functions for serializing and de-serializing Elixir terms
   using the [MessagePack](http://msgpack.org/) format.
 

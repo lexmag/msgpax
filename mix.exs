@@ -31,8 +31,7 @@ defmodule Msgpax.Mixfile do
   end
 
   defp deps() do
-    [{:earmark, ">= 0.0.0", only: :docs},
-     {:ex_doc, ">= 0.0.0", only: :docs},
+    [{:ex_doc, "~> 0.12", only: :docs},
      {:plug, "~> 1.0", optional: true}]
   end
 end
