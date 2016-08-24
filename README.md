@@ -22,7 +22,7 @@ Add `:msgpax` as a dependency in your `mix.exs` file:
 
 ```elixir
 def deps do
-  [{:msgpax, "~> 0.8"}]
+  [{:msgpax, "~> 1.0"}]
 end
 ```
 
