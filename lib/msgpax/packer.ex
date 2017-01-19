@@ -62,7 +62,7 @@ defprotocol Msgpax.Packer do
       #=> %{"name" => "Juri"}
 
   These things can be overcome by using something like
-  [Maptu](https://github.com/whatyouhide/maptu), which helps to reconstruct
+  [Maptu](https://github.com/lexhide/maptu), which helps to reconstruct
   structs:
 
       map = %User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()

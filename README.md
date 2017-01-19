@@ -43,4 +43,3 @@ This software is licensed under [the ISC license](LICENSE).
 [docs-msgpax-ext]: http://hexdocs.pm/msgpax/Msgpax.Ext.html
 [docs-msgpax-plug-parser]: http://hexdocs.pm/msgpax/Msgpax.PlugParser.html
 [docs-plug-parsers]: http://hexdocs.pm/msgpax/Plug.Parsers.html
-[github-maptu]: https://github.com/whatyouhide/maptu
