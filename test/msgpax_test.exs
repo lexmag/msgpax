@@ -42,7 +42,12 @@ defmodule MsgpaxTest do
     defstruct [:name, :age]
   end
 
-  defmodule UserDerivingStruct do
+  defmodule UserAllFields do
+    @derive [{Msgpax.Packer, include_struct_field: true}]
+    defstruct [:name]
+  end
+
+  defmodule UserDerivingStructField do
     @derive [{Msgpax.Packer, fields: [:name, :__struct__]}]
     defstruct [:name]
   end
@@ -229,7 +234,10 @@ defmodule MsgpaxTest do
 
     assert Msgpax.pack!(%UserWithAge{name: "Luke", age: 9}) == Msgpax.pack!(%{name: "Luke"})
 
-    expected = Msgpax.pack!(%{"__struct__" => UserDerivingStruct, name: "Juri"})
-    assert Msgpax.pack!(%UserDerivingStruct{name: "Juri"}) == expected
+    expected = Msgpax.pack!(%{"__struct__" => UserAllFields, name: "Francine"})
+    assert Msgpax.pack!(%UserAllFields{name: "Francine"}) == expected
+
+    expected = Msgpax.pack!(%{"__struct__" => UserDerivingStructField, name: "Juri"})
+    assert Msgpax.pack!(%UserDerivingStructField{name: "Juri"}) == expected
   end
 end
