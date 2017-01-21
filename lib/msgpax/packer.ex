@@ -49,6 +49,21 @@ defprotocol Msgpax.Packer do
   out of the struct before packing it. If you want this field to be present in
   the packed map, you have to specifically list it in the `:fields` option.
 
+  Another example:
+
+      defmodule User do
+        @derive [{Msgpax.Packer, without: [:sensitive_data, :__struct__]}]
+        defstruct [:name, :sensitive_data]
+      end
+
+  In this example, packing `User` will serialize only the `:name` field.
+  In contrast to the `fields` option, the `without` option will pack the
+  `:__struct__` field by default. Thus, if you want to exclude the `:__struct__`
+  field, you have to specify it in the `without` option explicitly.
+
+  If both `:fields` and `:without` options are defined, the `:fields` option
+  will be used.
+
   ## Unpacking back to Elixir structs
 
   When packing a struct, that struct will be packed as the underlying map and
@@ -242,6 +257,7 @@ defimpl Msgpax.Packer, for: Any do
 
   def deriving(module, opts) do
     fields = opts[:fields]
+    without = opts[:without]
     extractor =
       cond do
         fields && :__struct__ in fields ->
@@ -249,6 +265,14 @@ defimpl Msgpax.Packer, for: Any do
           quote(do: Map.take(struct, unquote(fields)) |> Map.put("__struct__", unquote(module)))
         fields ->
           quote(do: Map.take(struct, unquote(fields)))
+        without && :__struct__ in without ->
+          quote(do: Map.from_struct(struct) |> Map.drop(unquote(without)))
+        without ->
+          quote do
+            Map.from_struct(struct)
+            |> Map.put("__struct__", unquote(module))
+            |> Map.drop(unquote(without))
+          end
         true ->
           quote(do: Map.from_struct(struct))
       end

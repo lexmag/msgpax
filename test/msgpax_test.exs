@@ -47,6 +47,21 @@ defmodule MsgpaxTest do
     defstruct [:name]
   end
 
+  defmodule UserWithAgeHasWithoutOpt do
+    @derive [{Msgpax.Packer, without: [:age, :__struct__]}]
+    defstruct [:name, :age]
+  end
+
+  defmodule UserDerivingStructHasWithoutOpt do
+    @derive [{Msgpax.Packer, without: []}]
+    defstruct [:name]
+  end
+
+  defmodule UserWithAgeHasBothOpt do
+    @derive [{Msgpax.Packer, fields: [:name], without: [:name]}]
+    defstruct [:name, :age]
+  end
+
   test "fixstring" do
     assert_format string(0), [160]
     assert_format string(31), [191]
@@ -231,5 +246,18 @@ defmodule MsgpaxTest do
 
     expected = Msgpax.pack!(%{"__struct__" => UserDerivingStruct, name: "Juri"})
     assert Msgpax.pack!(%UserDerivingStruct{name: "Juri"}) == expected
+  end
+
+  test "deriving with 'without' option" do
+    expected = Msgpax.pack!(%{name: "Luke"})
+    assert Msgpax.pack!(%UserWithAgeHasWithoutOpt{name: "Luke", age: 9}) == expected
+
+    expected = Msgpax.pack!(%{"__struct__" => UserDerivingStructHasWithoutOpt, name: "Juri"})
+    assert Msgpax.pack!(%UserDerivingStructHasWithoutOpt{name: "Juri"}) == expected
+  end
+
+  test "deriving with both option" do
+    expected = Msgpax.pack!(%{name: "Luke"})
+    assert Msgpax.pack!(%UserWithAgeHasBothOpt{name: "Luke", age: 9}) == expected
   end
 end
