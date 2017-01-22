@@ -47,16 +47,16 @@ defprotocol Msgpax.Packer do
   In the example, packing `User` will only serialize the `:name` field and leave
   out the `:sensitive_data` field. By default, the `:__struct__` field is taken
   out of the struct before packing it. If you want this field to be present in
-  the packed map, you have to specifically list it in the `:fields` option.
+  the packed map, you have to set the `:include_struct_field` option to `true`.
 
   ## Unpacking back to Elixir structs
 
   When packing a struct, that struct will be packed as the underlying map and
   will be unpacked with string keys instead of atom keys. This makes it hard to
   reconstruct the map as tools like `Kernel.struct/2` can't be used (given keys
-  are strings). Also, unless specifically stated in the `:fields` option, the
-  `:__struct__` field is lost when packing a struct, so information about
-  *which* struct it was is lost.
+  are strings). Also, unless specifically stated with the `:include_struct_field`
+  option, the `:__struct__` field is lost when packing a struct, so information
+  about *which* struct it was is lost.
 
       %User{name: "Juri"} |> Msgpax.pack!() |> Msgpax.unpack!()
       #=> %{"name" => "Juri"}
@@ -120,8 +120,8 @@ defimpl Msgpax.Packer, for: BitString do
 end
 
 defimpl Msgpax.Packer, for: Map do
-  defmacro __deriving__(module, _, opts) do
-    @protocol.Any.deriving(module, opts)
+  defmacro __deriving__(module, struct, options) do
+    @protocol.Any.deriving(module, struct, options)
   end
 
   def pack(map) do
@@ -236,21 +236,25 @@ defimpl Msgpax.Packer, for: Msgpax.Ext do
 end
 
 defimpl Msgpax.Packer, for: Any do
-  defmacro __deriving__(module, _, opts) do
-    deriving(module, opts)
+  defmacro __deriving__(module, struct, options) do
+    deriving(module, struct, options)
   end
 
-  def deriving(module, opts) do
-    fields = opts[:fields]
+  def deriving(module, struct, options) do
+    keys = struct |> Map.from_struct() |> Map.keys()
+    fields = Keyword.get(options, :fields, keys)
+    include_struct_field? = Keyword.get(options, :include_struct_field, :__struct__ in fields)
+    fields = List.delete(fields, :__struct__)
     extractor =
       cond do
-        fields && :__struct__ in fields ->
-          fields = List.delete(fields, :__struct__)
-          quote(do: Map.take(struct, unquote(fields)) |> Map.put("__struct__", unquote(module)))
-        fields ->
-          quote(do: Map.take(struct, unquote(fields)))
-        true ->
+        fields == keys and include_struct_field? ->
+          quote(do: Map.from_struct(struct) |> Map.put("__struct__", unquote(module)))
+        fields == keys ->
           quote(do: Map.from_struct(struct))
+        include_struct_field? ->
+          quote(do: Map.take(struct, unquote(fields)) |> Map.put("__struct__", unquote(module)))
+        true ->
+          quote(do: Map.take(struct, unquote(fields)))
       end
 
     quote do
