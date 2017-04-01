@@ -114,8 +114,9 @@ defmodule Msgpax.Unpacker do
     do: {val, rest}
 
   defp unpack_list(rest, opts, len, acc \\ [])
+
   defp unpack_list(rest, _opts, 0, acc),
-    do: {Enum.reverse(acc), rest}
+    do: {:lists.reverse(acc), rest}
 
   defp unpack_list(rest, opts, len, acc) do
     {val, rest} = unpack(rest, opts)
@@ -123,8 +124,9 @@ defmodule Msgpax.Unpacker do
   end
 
   defp unpack_map(rest, opts, len, acc \\ [])
+
   defp unpack_map(rest, _opts, 0, acc),
-    do: {Enum.into(Enum.reverse(acc), %{}), rest}
+    do: {:maps.from_list(acc), rest}
 
   defp unpack_map(rest, opts, len, acc) do
     {key, rest} = unpack(rest, opts)
