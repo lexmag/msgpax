@@ -1,25 +1,3 @@
-defmodule Msgpax.Unpacker.Unpack do
-  @moduledoc false
-
-  import Macro, only: [pipe: 3]
-
-  defmacro defunpack(format, to: value) do
-    quote do
-      def unpack(<<unquote_splicing(format), rest::bytes>>, _opts) do
-        {unquote(value), rest}
-      end
-    end
-  end
-
-  defmacro defunpack(format, do: block) do
-    quote do
-      def unpack(<<unquote_splicing(format), rest::bytes>>, opts) do
-        unquote(pipe(quote(do: rest), pipe(quote(do: opts), block, 0), 0))
-      end
-    end
-  end
-end
-
 defmodule Msgpax.UnpackError do
   @moduledoc """
   Raised when there's an error in de-serializing some data into an Elixir term.
@@ -46,111 +24,203 @@ end
 defmodule Msgpax.Unpacker do
   @moduledoc false
 
-  import __MODULE__.Unpack
-
-  defunpack [0xC0], to: nil
-  defunpack [0xC2], to: false
-  defunpack [0xC3], to: true
-
-  # String
-  defunpack [0b101::3, len::5, val::size(len)-bytes], to: val
-  defunpack [0xD9, len::integer, val::size(len)-bytes], to: val
-  defunpack [0xDA, len::16-integer, val::size(len)-bytes], to: val
-  defunpack [0xDB, len::32-integer, val::size(len)-bytes], to: val
-
-  # Binary
-  defunpack [0xC4, len::integer, val::size(len)-bytes], do: unpack_binary(val)
-  defunpack [0xC5, len::16-integer, val::size(len)-bytes], do: unpack_binary(val)
-  defunpack [0xC6, len::32-integer, val::size(len)-bytes], do: unpack_binary(val)
-
-  # Float
-  defunpack [0xCA, val::32-big-float], to: val
-  defunpack [0xCB, val::64-big-float], to: val
-
-  # Integer
-  defunpack [0::1, val::7], to: val
-  defunpack [0xCC, val], to: val
-  defunpack [0xCD, val::16], to: val
-  defunpack [0xCE, val::32], to: val
-  defunpack [0xCF, val::64], to: val
-
-  defunpack [0b111::3, val::5], to: val - 0b100000
-  defunpack [0xD0, val::signed-integer], to: val
-  defunpack [0xD1, val::16-signed-integer], to: val
-  defunpack [0xD2, val::32-signed-integer], to: val
-  defunpack [0xD3, val::64-signed-integer], to: val
-
-  # Array
-  defunpack [0b1001::4, len::4], do: unpack_list(len)
-  defunpack [0xDC, len::16], do: unpack_list(len)
-  defunpack [0xDD, len::32], do: unpack_list(len)
-
-  # Map
-  defunpack [0b1000::4, len::4], do: unpack_map(len)
-  defunpack [0xDE, len::16], do: unpack_map(len)
-  defunpack [0xDF, len::32], do: unpack_map(len)
-
-  # Extension
-  defunpack [0xD4, type, val::1-bytes], do: unpack_ext(type, val)
-  defunpack [0xD5, type, val::2-bytes], do: unpack_ext(type, val)
-  defunpack [0xD6, type, val::4-bytes], do: unpack_ext(type, val)
-  defunpack [0xD7, type, val::8-bytes], do: unpack_ext(type, val)
-  defunpack [0xD8, type, val::16-bytes], do: unpack_ext(type, val)
-
-  defunpack [0xC7, len, type, val::size(len)-bytes], do: unpack_ext(type, val)
-  defunpack [0xC8, len::16, type, val::size(len)-bytes], do: unpack_ext(type, val)
-  defunpack [0xC9, len::32, type, val::size(len)-bytes], do: unpack_ext(type, val)
-
-  def unpack(<<bin, _::bytes>>, _opts),
-    do: throw({:bad_format, bin})
-
-  def unpack(<<_::bits>>, _opts),
-    do: throw(:incomplete)
-
-  defp unpack_binary(rest, %{binary: true}, val),
-    do: {Msgpax.Bin.new(val), rest}
-
-  defp unpack_binary(rest, _opts, val),
-    do: {val, rest}
-
-  defp unpack_list(rest, opts, len, acc \\ [])
-
-  defp unpack_list(rest, _opts, 0, acc),
-    do: {:lists.reverse(acc), rest}
-
-  defp unpack_list(rest, opts, len, acc) do
-    {val, rest} = unpack(rest, opts)
-    unpack_list(rest, opts, len - 1, [val | acc])
+  def unpack(<<buffer::bits>>, options) do
+    unpack(buffer, [], options)
   end
 
-  defp unpack_map(rest, opts, len, acc \\ [])
+  formats = %{
+    quote(do: [0xC0]) => {:value, quote(do: nil)},
+    quote(do: [0xC2]) => {:value, quote(do: false)},
+    quote(do: [0xC3]) => {:value, quote(do: true)},
 
-  defp unpack_map(rest, _opts, 0, acc),
-    do: {:maps.from_list(acc), rest}
+    # String
+    quote(do: [0b101::3, length::5, value::size(length)-bytes]) => {:value, quote(do: value)},
+    quote(do: [0xD9, length::integer, value::size(length)-bytes]) => {:value, quote(do: value)},
+    quote(do: [0xDA, length::16-integer, value::size(length)-bytes]) => {:value, quote(do: value)},
+    quote(do: [0xDB, length::32-integer, value::size(length)-bytes]) => {:value, quote(do: value)},
 
-  defp unpack_map(rest, opts, len, acc) do
-    {key, rest} = unpack(rest, opts)
-    {val, rest} = unpack(rest, opts)
-    unpack_map(rest, opts, len - 1, [{key, val} | acc])
+    # Binary
+    quote(do: [0xC4, len::integer, val::size(len)-bytes]) => {:call, quote(do: unpack_binary(val))},
+    quote(do: [0xC5, len::16-integer, val::size(len)-bytes]) => {:call, quote(do: unpack_binary(val))},
+    quote(do: [0xC6, len::32-integer, val::size(len)-bytes]) => {:call, quote(do: unpack_binary(val))},
+
+    # Float
+    quote(do: [0xCA, val::32-big-float]) => {:value, quote(do: val)},
+    quote(do: [0xCB, val::64-big-float]) => {:value, quote(do: val)},
+
+    # Integer
+    quote(do: [0::1, val::7]) => {:value, quote(do: val)},
+    quote(do: [0xCC, val]) => {:value, quote(do: val)},
+    quote(do: [0xCD, val::16]) => {:value, quote(do: val)},
+    quote(do: [0xCE, val::32]) => {:value, quote(do: val)},
+    quote(do: [0xCF, val::64]) => {:value, quote(do: val)},
+    quote(do: [0b111::3, val::5]) => {:value, quote(do: val - 0b100000)},
+    quote(do: [0xD0, val::signed-integer]) => {:value, quote(do: val)},
+    quote(do: [0xD1, val::16-signed-integer]) => {:value, quote(do: val)},
+    quote(do: [0xD2, val::32-signed-integer]) => {:value, quote(do: val)},
+    quote(do: [0xD3, val::64-signed-integer]) => {:value, quote(do: val)},
+
+    # Array
+    quote(do: [0b1001::4, len::4]) => {:call, quote(do: unpack_list(len))},
+    quote(do: [0xDC, len::16]) => {:call, quote(do: unpack_list(len))},
+    quote(do: [0xDD, len::32]) => {:call, quote(do:  unpack_list(len))},
+
+    # Map
+    quote(do: [0b1000::4, len::4]) => {:call, quote(do: unpack_map(len))},
+    quote(do: [0xDE, len::16]) => {:call, quote(do: unpack_map(len))},
+    quote(do: [0xDF, len::32]) => {:call, quote(do: unpack_map(len))},
+
+    # Extension
+    quote(do: [0xD4, type, val::1-bytes]) => {:call, quote(do: unpack_ext(type, val))},
+    quote(do: [0xD5, type, val::2-bytes]) => {:call, quote(do: unpack_ext(type, val))},
+    quote(do: [0xD6, type, val::4-bytes]) => {:call, quote(do: unpack_ext(type, val))},
+    quote(do: [0xD7, type, val::8-bytes]) => {:call, quote(do: unpack_ext(type, val))},
+    quote(do: [0xD8, type, val::16-bytes]) => {:call, quote(do: unpack_ext(type, val))},
+    quote(do: [0xC7, len, type, val::size(len)-bytes]) => {:call, quote(do:  unpack_ext(type, val))},
+    quote(do: [0xC8, len::16, type, val::size(len)-bytes]) => {:call, quote(do:  unpack_ext(type, val))},
+    quote(do: [0xC9, len::32, type, val::size(len)-bytes]) => {:call, quote(do:  unpack_ext(type, val))},
+  }
+
+  import Macro, only: [pipe: 3]
+
+  for {format, {:value, value}} <- formats do
+    def unpack(<<unquote_splicing(format), rest::bytes>>, [], options) do
+      unpack(rest, [unquote(value)], options)
+    end
   end
 
-  defp unpack_ext(rest, opts, type, data) when type in 0..127 do
-    {unpack_ext(type, data, opts), rest}
+  for {format, {:call, call}} <- formats do
+    rest = Macro.var(:rest, nil)
+    options = Macro.var(:options, nil)
+    def unpack(<<unquote_splicing(format), rest::bytes>>, [], options) do
+      unquote(pipe(rest, pipe([], pipe(options, pipe([], call, 0), 0), 0), 0))
+    end
   end
 
-  defp unpack_ext(_rest, _opts, type, _data) do
-    throw {:not_supported_ext, type}
+  def unpack(<<byte, _::bytes>>, [], _options) do
+    throw {:bad_format, byte}
+  end
+
+  def unpack(<<_::bits>>, [], _options) do
+    throw :incomplete
+  end
+
+  def unpack(buffer, [value], _options) do
+    {value, buffer}
+  end
+
+  defp unpack_binary(<<buffer::bytes>>, result, %{binary: true} = options, [], value) do
+    unpack(buffer, [Msgpax.Bin.new(value) | result], options)
+  end
+
+  defp unpack_binary(<<buffer::bytes>>, result, options, [], value) do
+    unpack(buffer, [value | result], options)
+  end
+
+  def unpack_list(<<buffer::bytes>>, result, options, outer, length) do
+    unpack_list(buffer, result, options, outer, length, length)
+  end
+
+  def unpack_list(<<buffer::bytes>>, result, options, [], 0, count) do
+    {value, rest} = Enum.split(result, count)
+    unpack(buffer, [:lists.reverse(value) | rest], options)
+  end
+
+  def unpack_list(<<buffer::bytes>>, result, options, [{index, length} | outer], 0, count) do
+    {value, rest} = Enum.split(result, count)
+    unpack_list(buffer, [:lists.reverse(value) | rest], options, outer, index - 1, length)
+  end
+
+  def unpack_list(<<buffer::bytes>>, result, options, [{index, length, :key} | outer], 0, count) do
+    {value, rest} = Enum.split(result, count)
+    unpack_map(buffer, [:lists.reverse(value) | rest], options, outer, index, length, :value)
+  end
+
+  def unpack_list(<<buffer::bytes>>, result, options, [{index, length, :value} | outer], 0, count) do
+    {value, [key | rest]} = Enum.split(result, count)
+    unpack_map(buffer, [{key, :lists.reverse(value)} | rest], options, outer, index - 1, length, :key)
+  end
+
+  for {format, {:value, value}} <- formats do
+    def unpack_list(<<unquote_splicing(format), rest::bytes>>, result, options, outer, index, length) do
+      unpack_list(rest, [unquote(value) | result], options, outer, index - 1, length)
+    end
+  end
+
+  for {format, {:call, call}} <- formats do
+    rest = Macro.var(:rest, nil)
+    result = Macro.var(:result, nil)
+    options = Macro.var(:options, nil)
+    outer = Macro.var(:outer, nil)
+    def unpack_list(<<unquote_splicing(format), rest::bytes>>, result, options, outer, index, length) do
+      outer = [{index, length} | outer]
+      unquote(pipe(rest, pipe(result, pipe(options, pipe(outer, call, 0), 0), 0), 0))
+    end
+  end
+
+  def unpack_map(<<buffer::bytes>>, result, options, outer, length) do
+    unpack_map(buffer, result, options, outer, length, length, :key)
+  end
+
+  def unpack_map(<<buffer::bytes>>, result, options, [], 0, count, :key) do
+    {value, rest} = Enum.split(result, count)
+    unpack(buffer, [:maps.from_list(value) | rest], options)
+  end
+
+  def unpack_map(<<buffer::bytes>>, result, options, [index, length, :key | outer], 0, count) do
+    {value, rest} = Enum.split(result, count)
+    unpack_map(buffer, [:maps.from_list(value) | rest], options, outer, index, length, :value)
+  end
+
+  def unpack_map(<<buffer::bytes>>, result, options, [index, length, :value | outer], 0, count) do
+    {value, rest} = Enum.split(result, count)
+    unpack_map(buffer, [:maps.from_list(value) | rest], options, outer, index - 1, length, :key)
+  end
+
+  def unpack_map(<<buffer::bytes>>, result, options, [{index, length} | outer], 0, count) do
+    {value, rest} = Enum.split(result, count)
+    unpack_list(buffer, [:maps.from_list(value) | rest], options, outer, index - 1, length)
+  end
+
+  for {format, {:value, value}} <- formats do
+    def unpack_map(<<unquote_splicing(format), rest::bytes>>, result, options, outer, index, length, :key) do
+      unpack_map(rest, [unquote(value) | result], options, outer, index, length, :value)
+    end
+
+    def unpack_map(<<unquote_splicing(format), rest::bytes>>, [key | result], options, outer, index, length, :value) do
+      unpack_map(rest, [{key, unquote(value)} | result], options, outer, index - 1, length, :key)
+    end
+  end
+
+  for {format, {:call, call}} <- formats do
+    rest = Macro.var(:rest, nil)
+    result = Macro.var(:result, nil)
+    options = Macro.var(:options, nil)
+    outer = Macro.var(:outer, nil)
+    def unpack_map(<<unquote_splicing(format), rest::bytes>>, result, options, outer, index, length, type) do
+      outer = [{index, length, type} | outer]
+      unquote(pipe(rest, pipe(result, pipe(options, pipe(outer, call, 0), 0), 0), 0))
+    end
+  end
+
+  defp unpack_ext(<<buffer::bytes>>, result, options, [], type, data) do
+    if type in 0..127 do
+      unpack(buffer, [unpack_ext(type, data, options) | result], options)
+    else
+      throw {:not_supported_ext, type}
+    end
   end
 
   defp unpack_ext(type, data, %{ext: module}) when is_atom(module) do
     case module.unpack(Msgpax.Ext.new(type, data)) do
-      {:ok, result} -> result
+      {:ok, result} ->
+        result
       :error ->
         throw {:ext_unpack_failure, type, module, data}
     end
   end
 
-  defp unpack_ext(type, data, _opts) do
+  defp unpack_ext(type, data, _options) do
     Msgpax.Ext.new(type, data)
   end
 end
