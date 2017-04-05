@@ -139,8 +139,7 @@ defmodule Msgpax.Unpacker do
   end
 
   defp unpack_list(<<buffer::bits>>, result, options, outer, count, count) do
-    {value, rest} = Enum.split(result, count)
-    unpack_continue(buffer, [:lists.reverse(value) | rest], options, outer)
+    unpack_continue(buffer, build_list(result, [], count), options, outer)
   end
 
   defp unpack_map(<<buffer::bits>>, result, options, outer, length) do
@@ -152,8 +151,8 @@ defmodule Msgpax.Unpacker do
       unpack_map(rest, [unquote(value) | result], options, outer, index, length, :value)
     end
 
-    defp unpack_map(<<unquote_splicing(format), rest::bits>>, [key | result], options, outer, index, length, :value) when index < length do
-      unpack_map(rest, [{key, unquote(value)} | result], options, outer, index + 1, length, :key)
+    defp unpack_map(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length, :value) when index < length do
+      unpack_map(rest, [unquote(value) | result], options, outer, index + 1, length, :key)
     end
   end
 
@@ -169,8 +168,7 @@ defmodule Msgpax.Unpacker do
   end
 
   defp unpack_map(<<buffer::bits>>, result, options, outer, count, count, :key) do
-    {value, rest} = Enum.split(result, count)
-    unpack_continue(buffer, [:maps.from_list(value) | rest], options, outer)
+    unpack_continue(buffer, build_map(result, [], count), options, outer)
   end
 
   defp unpack_ext(<<buffer::bits>>, result, options, outer, type, data) do
@@ -202,11 +200,27 @@ defmodule Msgpax.Unpacker do
     unpack_map(buffer, result, options, outer, index, length, :value)
   end
 
-  defp unpack_continue(<<buffer::bits>>, [{value, key} | result], options, [{index, length, :value} | outer]) do
-    unpack_map(buffer, [{key, value} | result], options, outer, index + 1, length, :key)
+  defp unpack_continue(<<buffer::bits>>, result, options, [{index, length, :value} | outer]) do
+    unpack_map(buffer, result, options, outer, index + 1, length, :key)
   end
 
   defp unpack_continue(<<buffer::bits>>, result, options, []) do
     unpack(buffer, result, options)
+  end
+
+  defp build_list(result, list, 0) do
+    [list | result]
+  end
+
+  defp build_list([item | rest], list, count) do
+    build_list(rest, [item | list], count - 1)
+  end
+
+  defp build_map(result, pairs, 0) do
+    [:maps.from_list(pairs) | result]
+  end
+
+  defp build_map([value, key | rest], pairs, count) do
+    build_map(rest, [{key, value} | pairs], count - 1)
   end
 end
