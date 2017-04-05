@@ -133,7 +133,7 @@ defmodule Msgpax.Unpacker do
     options = Macro.var(:options, nil)
     outer = Macro.var(:outer, nil)
     defp unpack_collection(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length, kind) when index < length do
-      outer = [kind, index, length | outer]
+      outer = [{kind, index, length} | outer]
       unquote(pipe(rest, pipe(result, pipe(options, pipe(outer, call, 0), 0), 0), 0))
     end
   end
@@ -167,7 +167,7 @@ defmodule Msgpax.Unpacker do
     Msgpax.Ext.new(type, data)
   end
 
-  defp unpack_continue(<<buffer::bits>>, result, options, [kind, index, length | outer]) do
+  defp unpack_continue(<<buffer::bits>>, result, options, [{kind, index, length} | outer]) do
     unpack_collection(buffer, result, options, outer, index + 1, length, kind)
   end
 
