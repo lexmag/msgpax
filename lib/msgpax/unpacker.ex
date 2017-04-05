@@ -143,16 +143,12 @@ defmodule Msgpax.Unpacker do
   end
 
   defp unpack_map(<<buffer::bits>>, result, options, outer, length) do
-    unpack_map(buffer, result, options, outer, 0, length, :key)
+    unpack_map(buffer, result, options, outer, 0, length * 2, :key)
   end
 
   for {format, {:value, value}} <- formats do
-    defp unpack_map(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length, :key) when index < length do
-      unpack_map(rest, [unquote(value) | result], options, outer, index, length, :value)
-    end
-
-    defp unpack_map(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length, :value) when index < length do
-      unpack_map(rest, [unquote(value) | result], options, outer, index + 1, length, :key)
+    defp unpack_map(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length, type) when index < length do
+      unpack_map(rest, [unquote(value) | result], options, outer, index + 1, length, type)
     end
   end
 
@@ -196,12 +192,8 @@ defmodule Msgpax.Unpacker do
     unpack_list(buffer, result, options, outer, index + 1, length)
   end
 
-  defp unpack_continue(<<buffer::bits>>, result, options, [{index, length, :key} | outer]) do
-    unpack_map(buffer, result, options, outer, index, length, :value)
-  end
-
-  defp unpack_continue(<<buffer::bits>>, result, options, [{index, length, :value} | outer]) do
-    unpack_map(buffer, result, options, outer, index + 1, length, :key)
+  defp unpack_continue(<<buffer::bits>>, result, options, [{index, length, type} | outer]) do
+    unpack_map(buffer, result, options, outer, index + 1, length, type)
   end
 
   defp unpack_continue(<<buffer::bits>>, result, options, []) do
@@ -221,6 +213,6 @@ defmodule Msgpax.Unpacker do
   end
 
   defp build_map([value, key | rest], pairs, count) do
-    build_map(rest, [{key, value} | pairs], count - 1)
+    build_map(rest, [{key, value} | pairs], count - 2)
   end
 end
