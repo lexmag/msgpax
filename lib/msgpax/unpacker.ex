@@ -118,12 +118,12 @@ defmodule Msgpax.Unpacker do
   end
 
   defp unpack_list(<<buffer::bits>>, result, options, outer, length) do
-    unpack_list(buffer, result, options, outer, 0, length)
+    unpack_collection(buffer, result, options, outer, 0, length, :list)
   end
 
   for {format, {:value, value}} <- formats do
-    defp unpack_list(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length) when index < length do
-      unpack_list(rest, [unquote(value) | result], options, outer, index + 1, length)
+    defp unpack_collection(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length, kind) when index < length do
+      unpack_collection(rest, [unquote(value) | result], options, outer, index + 1, length, kind)
     end
   end
 
@@ -132,39 +132,18 @@ defmodule Msgpax.Unpacker do
     result = Macro.var(:result, nil)
     options = Macro.var(:options, nil)
     outer = Macro.var(:outer, nil)
-    defp unpack_list(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length) when index < length do
-      outer = [:list, index, length | outer]
+    defp unpack_collection(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length, kind) when index < length do
+      outer = [kind, index, length | outer]
       unquote(pipe(rest, pipe(result, pipe(options, pipe(outer, call, 0), 0), 0), 0))
     end
   end
 
-  defp unpack_list(<<buffer::bits>>, result, options, outer, count, count) do
-    unpack_continue(buffer, build_list(result, [], count), options, outer)
+  defp unpack_collection(<<buffer::bits>>, result, options, outer, count, count, kind) do
+    unpack_continue(buffer, build_collection(result, count, kind), options, outer)
   end
 
   defp unpack_map(<<buffer::bits>>, result, options, outer, length) do
-    unpack_map(buffer, result, options, outer, 0, length * 2)
-  end
-
-  for {format, {:value, value}} <- formats do
-    defp unpack_map(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length) when index < length do
-      unpack_map(rest, [unquote(value) | result], options, outer, index + 1, length)
-    end
-  end
-
-  for {format, {:call, call}} <- formats do
-    rest = Macro.var(:rest, nil)
-    result = Macro.var(:result, nil)
-    options = Macro.var(:options, nil)
-    outer = Macro.var(:outer, nil)
-    defp unpack_map(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, length) when index < length do
-      outer = [:map, index, length | outer]
-      unquote(pipe(rest, pipe(result, pipe(options, pipe(outer, call, 0), 0), 0), 0))
-    end
-  end
-
-  defp unpack_map(<<buffer::bits>>, result, options, outer, count, count) do
-    unpack_continue(buffer, build_map(result, [], count), options, outer)
+    unpack_collection(buffer, result, options, outer, 0, length * 2, :map)
   end
 
   defp unpack_ext(<<buffer::bits>>, result, options, outer, type, data) do
@@ -188,16 +167,22 @@ defmodule Msgpax.Unpacker do
     Msgpax.Ext.new(type, data)
   end
 
-  defp unpack_continue(<<buffer::bits>>, result, options, [:list, index, length | outer]) do
-    unpack_list(buffer, result, options, outer, index + 1, length)
-  end
-
-  defp unpack_continue(<<buffer::bits>>, result, options, [:map, index, length | outer]) do
-    unpack_map(buffer, result, options, outer, index + 1, length)
+  defp unpack_continue(<<buffer::bits>>, result, options, [kind, index, length | outer]) do
+    unpack_collection(buffer, result, options, outer, index + 1, length, kind)
   end
 
   defp unpack_continue(<<buffer::bits>>, result, options, []) do
     unpack(buffer, result, options)
+  end
+
+  @compile {:inline, [build_collection: 3]}
+
+  defp build_collection(result, count, :list) do
+    build_list(result, [], count)
+  end
+
+  defp build_collection(result, count, :map) do
+    build_map(result, [], count)
   end
 
   defp build_list(result, list, 0) do
