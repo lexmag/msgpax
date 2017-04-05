@@ -109,36 +109,21 @@ defmodule Msgpax.Unpacker do
     {value, buffer}
   end
 
-  defp unpack_binary(<<buffer::bytes>>, result, %{binary: true} = options, [], value) do
-    unpack(buffer, [Msgpax.Bin.new(value) | result], options)
+  defp unpack_binary(<<buffer::bytes>>, result, %{binary: true} = options, outer, value) do
+    unpack_continue(buffer, [Msgpax.Bin.new(value) | result], options, outer)
   end
 
-  defp unpack_binary(<<buffer::bytes>>, result, options, [], value) do
-    unpack(buffer, [value | result], options)
+  defp unpack_binary(<<buffer::bytes>>, result, options, outer, value) do
+    unpack_continue(buffer, [value | result], options, outer)
   end
 
   def unpack_list(<<buffer::bytes>>, result, options, outer, length) do
     unpack_list(buffer, result, options, outer, 0, length)
   end
 
-  def unpack_list(<<buffer::bytes>>, result, options, [], count, count) do
+  def unpack_list(<<buffer::bytes>>, result, options, outer, count, count) do
     {value, rest} = Enum.split(result, count)
-    unpack(buffer, [:lists.reverse(value) | rest], options)
-  end
-
-  def unpack_list(<<buffer::bytes>>, result, options, [{index, length} | outer], count, count) do
-    {value, rest} = Enum.split(result, count)
-    unpack_list(buffer, [:lists.reverse(value) | rest], options, outer, index + 1, length)
-  end
-
-  def unpack_list(<<buffer::bytes>>, result, options, [{index, length, :key} | outer], count, count) do
-    {value, rest} = Enum.split(result, count)
-    unpack_map(buffer, [:lists.reverse(value) | rest], options, outer, index, length, :value)
-  end
-
-  def unpack_list(<<buffer::bytes>>, result, options, [{index, length, :value} | outer], count, count) do
-    {value, [key | rest]} = Enum.split(result, count)
-    unpack_map(buffer, [{key, :lists.reverse(value)} | rest], options, outer, index + 1, length, :key)
+    unpack_continue(buffer, [:lists.reverse(value) | rest], options, outer)
   end
 
   for {format, {:value, value}} <- formats do
@@ -162,24 +147,9 @@ defmodule Msgpax.Unpacker do
     unpack_map(buffer, result, options, outer, 0, length, :key)
   end
 
-  def unpack_map(<<buffer::bytes>>, result, options, [], count, count, :key) do
+  def unpack_map(<<buffer::bytes>>, result, options, outer, count, count, :key) do
     {value, rest} = Enum.split(result, count)
-    unpack(buffer, [:maps.from_list(value) | rest], options)
-  end
-
-  def unpack_map(<<buffer::bytes>>, result, options, [index, length, :key | outer], count, count) do
-    {value, rest} = Enum.split(result, count)
-    unpack_map(buffer, [:maps.from_list(value) | rest], options, outer, index, length, :value)
-  end
-
-  def unpack_map(<<buffer::bytes>>, result, options, [index, length, :value | outer], count, count) do
-    {value, rest} = Enum.split(result, count)
-    unpack_map(buffer, [:maps.from_list(value) | rest], options, outer, index + 1, length, :key)
-  end
-
-  def unpack_map(<<buffer::bytes>>, result, options, [{index, length} | outer], count, count) do
-    {value, rest} = Enum.split(result, count)
-    unpack_list(buffer, [:maps.from_list(value) | rest], options, outer, index + 1, length)
+    unpack_continue(buffer, [:maps.from_list(value) | rest], options, outer)
   end
 
   for {format, {:value, value}} <- formats do
@@ -203,9 +173,9 @@ defmodule Msgpax.Unpacker do
     end
   end
 
-  defp unpack_ext(<<buffer::bytes>>, result, options, [], type, data) do
+  defp unpack_ext(<<buffer::bytes>>, result, options, outer, type, data) do
     if type in 0..127 do
-      unpack(buffer, [unpack_ext(type, data, options) | result], options)
+      unpack_continue(buffer, [unpack_ext(type, data, options) | result], options, outer)
     else
       throw {:not_supported_ext, type}
     end
@@ -222,5 +192,21 @@ defmodule Msgpax.Unpacker do
 
   defp unpack_ext(type, data, _options) do
     Msgpax.Ext.new(type, data)
+  end
+
+  def unpack_continue(<<buffer::bytes>>, result, options, [{index, length} | outer]) do
+    unpack_list(buffer, result, options, outer, index + 1, length)
+  end
+
+  def unpack_continue(<<buffer::bytes>>, result, options, [{index, length, :key} | outer]) do
+    unpack_map(buffer, result, options, outer, index, length, :value)
+  end
+
+  def unpack_continue(<<buffer::bytes>>, [{value, key} | result], options, [{index, length, :value} | outer]) do
+    unpack_map(buffer, [{key, value} | result], options, outer, index + 1, length, :key)
+  end
+
+  def unpack_continue(<<buffer::bytes>>, result, options, []) do
+    unpack(buffer, result, options)
   end
 end
