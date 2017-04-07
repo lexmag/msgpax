@@ -83,33 +83,33 @@ defmodule Msgpax.Unpacker do
 
   import Macro, only: [pipe: 3]
 
+  defp unpack(<<buffer::bits>>, result, options, [kind, index, size | outer], count, count) do
+    unpack(buffer, build_collection(result, count, kind), options, outer, index + 1, size)
+  end
+
   for {format, {:value, value}} <- formats do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       unpack(rest, [unquote(value) | result], options, outer, index + 1, count)
     end
   end
 
   for {format, {:call, call}} <- formats do
     options = Macro.var(:options, nil)
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       unpack(rest, [unquote(pipe(options, call, 0)) | result], options, outer, index + 1, count)
     end
   end
 
   for {format, {:collection, :list = kind}} <- formats do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, [kind | outer], index, count) when index < count do
-      unpack(rest, result, options, [unquote(kind), {kind, index, count} | outer], 0, unquote(quote(do: len)))
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
+      unpack(rest, result, options, [unquote(kind), index, count | outer], 0, unquote(quote(do: len)))
     end
   end
 
   for {format, {:collection, :map = kind}} <- formats do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, [kind | outer], index, count) when index < count do
-      unpack(rest, result, options, [unquote(kind), {kind, index, count} | outer], 0, unquote(quote(do: len)) * 2)
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
+      unpack(rest, result, options, [unquote(kind), index, count | outer], 0, unquote(quote(do: len)) * 2)
     end
-  end
-
-  defp unpack(<<buffer::bits>>, result, options, [kind, {next, index, size} | outer], count, count) do
-    unpack(buffer, build_collection(result, count, kind), options, [next | outer], index + 1, size)
   end
 
   defp unpack(<<byte, _::bits>>, [], _options, _outer, _index, _count) do
