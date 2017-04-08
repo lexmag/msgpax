@@ -28,113 +28,117 @@ defmodule Msgpax.Unpacker do
     unpack(buffer, [], options, [:root], 0, 1)
   end
 
-  formats = %{
-    quote(do: [0xC0]) => {:value, quote(do: nil)},
-    quote(do: [0xC2]) => {:value, quote(do: false)},
-    quote(do: [0xC3]) => {:value, quote(do: true)},
-
-    # String
-    quote(do: [0b101::3, length::5, value::size(length)-bytes]) => {:value, quote(do: value)},
-    quote(do: [0xD9, length::integer, value::size(length)-bytes]) => {:value, quote(do: value)},
-    quote(do: [0xDA, length::16-integer, value::size(length)-bytes]) => {:value, quote(do: value)},
-    quote(do: [0xDB, length::32-integer, value::size(length)-bytes]) => {:value, quote(do: value)},
-
-    # Binary
-    quote(do: [0xC4, len::integer, val::size(len)-bytes]) => {:call, quote(do: unpack_binary(val))},
-    quote(do: [0xC5, len::16-integer, val::size(len)-bytes]) => {:call, quote(do: unpack_binary(val))},
-    quote(do: [0xC6, len::32-integer, val::size(len)-bytes]) => {:call, quote(do: unpack_binary(val))},
-
-    # Float
-    quote(do: [0xCA, val::32-big-float]) => {:value, quote(do: val)},
-    quote(do: [0xCB, val::64-big-float]) => {:value, quote(do: val)},
-
-    # Integer
-    quote(do: [0::1, val::7]) => {:value, quote(do: val)},
-    quote(do: [0xCC, val]) => {:value, quote(do: val)},
-    quote(do: [0xCD, val::16]) => {:value, quote(do: val)},
-    quote(do: [0xCE, val::32]) => {:value, quote(do: val)},
-    quote(do: [0xCF, val::64]) => {:value, quote(do: val)},
-    quote(do: [0b111::3, val::5]) => {:value, quote(do: val - 0b100000)},
-    quote(do: [0xD0, val::signed-integer]) => {:value, quote(do: val)},
-    quote(do: [0xD1, val::16-signed-integer]) => {:value, quote(do: val)},
-    quote(do: [0xD2, val::32-signed-integer]) => {:value, quote(do: val)},
-    quote(do: [0xD3, val::64-signed-integer]) => {:value, quote(do: val)},
-
-    # Array
-    quote(do: [0b1001::4, len::4]) => {:collection, :list},
-    quote(do: [0xDC, len::16]) => {:collection, :list},
-    quote(do: [0xDD, len::32]) => {:collection, :list},
-
-    # Map
-    quote(do: [0b1000::4, len::4]) => {:collection, :map},
-    quote(do: [0xDE, len::16]) => {:collection, :map},
-    quote(do: [0xDF, len::32]) => {:collection, :map},
-
-    # Extension
-    quote(do: [0xD4, type, val::1-bytes]) => {:call, quote(do: unpack_ext(type, val))},
-    quote(do: [0xD5, type, val::2-bytes]) => {:call, quote(do: unpack_ext(type, val))},
-    quote(do: [0xD6, type, val::4-bytes]) => {:call, quote(do: unpack_ext(type, val))},
-    quote(do: [0xD7, type, val::8-bytes]) => {:call, quote(do: unpack_ext(type, val))},
-    quote(do: [0xD8, type, val::16-bytes]) => {:call, quote(do: unpack_ext(type, val))},
-    quote(do: [0xC7, len, type, val::size(len)-bytes]) => {:call, quote(do:  unpack_ext(type, val))},
-    quote(do: [0xC8, len::16, type, val::size(len)-bytes]) => {:call, quote(do:  unpack_ext(type, val))},
-    quote(do: [0xC9, len::32, type, val::size(len)-bytes]) => {:call, quote(do:  unpack_ext(type, val))},
-  }
-
-  import Macro, only: [pipe: 3]
-
-  defp unpack(<<buffer::bits>>, result, options, [kind, index, size | outer], count, count) do
-    unpack(buffer, build_collection(result, count, kind), options, outer, index + 1, size)
+  defp unpack(<<buffer::bits>>, result, options, [kind, index, length | outer], count, count) do
+    unpack(buffer, build_collection(result, count, kind), options, outer, index + 1, length)
   end
 
-  for {format, {:value, value}} <- formats do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
+  primitives = %{
+    [quote(do: [0xC0])] => quote(do: nil),
+    [quote(do: [0xC2])] => quote(do: false),
+    [quote(do: [0xC3])] => quote(do: true),
+    [# Strings
+     quote(do: [0b101::3, length::5, value::size(length)-bytes]),
+     quote(do: [0xD9, length::8, value::size(length)-bytes]),
+     quote(do: [0xDA, length::16, value::size(length)-bytes]),
+     quote(do: [0xDB, length::32, value::size(length)-bytes]),
+
+     # Floats
+     quote(do: [0xCA, value::32-float]),
+     quote(do: [0xCB, value::64-float]),
+
+     # Integers
+     quote(do: [0::1, value::7]),
+     quote(do: [0xCC, value::8]),
+     quote(do: [0xCD, value::16]),
+     quote(do: [0xCE, value::32]),
+     quote(do: [0xCF, value::64]),
+     quote(do: [0xD0, value::8-signed]),
+     quote(do: [0xD1, value::16-signed]),
+     quote(do: [0xD2, value::32-signed]),
+     quote(do: [0xD3, value::64-signed])] => quote(do: value),
+    # Negative fixint
+    [quote(do: [0b111::3, value::5])] => quote(do: value - 0b100000),
+  }
+  for {formats, value} <- primitives, format <- formats do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
       unpack(rest, [unquote(value) | result], options, outer, index + 1, count)
     end
   end
 
-  for {format, {:call, call}} <- formats do
-    options = Macro.var(:options, nil)
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
-      unpack(rest, [unquote(pipe(options, call, 0)) | result], options, outer, index + 1, count)
+  lists = [
+    quote(do: [0b1001::4, length::4]),
+    quote(do: [0xDC, length::16]),
+    quote(do: [0xDD, length::32]),
+  ]
+  for format <- lists do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+      unpack(rest, result, options, [:list, index, count | outer], 0, unquote(quote(do: length)))
     end
   end
 
-  for {format, {:collection, :list = kind}} <- formats do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
-      unpack(rest, result, options, [unquote(kind), index, count | outer], 0, unquote(quote(do: len)))
+  maps = [
+    quote(do: [0b1000::4, length::4]),
+    quote(do: [0xDE, length::16]),
+    quote(do: [0xDF, length::32]),
+  ]
+  for format <- maps do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+      unpack(rest, result, options, [:map, index, count | outer], 0, unquote(quote(do: length)) * 2)
     end
   end
 
-  for {format, {:collection, :map = kind}} <- formats do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
-      unpack(rest, result, options, [unquote(kind), index, count | outer], 0, unquote(quote(do: len)) * 2)
+  binaries = [
+    quote(do: [0xC4, length::8, content::size(length)-bytes]),
+    quote(do: [0xC5, length::16, content::size(length)-bytes]),
+    quote(do: [0xC6, length::32, content::size(length)-bytes]),
+  ]
+  for format <- binaries do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+      value = unpack_binary(unquote(quote(do: content)), options)
+      unpack(rest, [value | result], options, outer, index + 1, count)
     end
   end
 
-  defp unpack(<<byte, _::bits>>, [], _options, _outer, _index, _count) do
-    throw {:bad_format, byte}
+  extensions = [
+    quote(do: [0xD4, type, content::1-bytes]),
+    quote(do: [0xD5, type, content::2-bytes]),
+    quote(do: [0xD6, type, content::4-bytes]),
+    quote(do: [0xD7, type, content::8-bytes]),
+    quote(do: [0xD8, type, content::16-bytes]),
+    quote(do: [0xC7, length::8, type, content::size(length)-bytes]),
+    quote(do: [0xC8, length::16, type, content::size(length)-bytes]),
+    quote(do: [0xC9, length::32, type, content::size(length)-bytes]),
+  ]
+  for format <- extensions do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+      value = unpack_ext(unquote(quote(do: type)), unquote(quote(do: content)), options)
+      unpack(rest, [value | result], options, outer, index + 1, count)
+    end
   end
 
-  defp unpack(<<_::bits>>, [], _options, _outer,  _index, _count) do
-    throw :incomplete
-  end
-
-  defp unpack(buffer, [value], _options, [:root], count, count) do
+  defp unpack(<<buffer::bits>>, [value], _options, [:root], count, count) do
     {value, buffer}
   end
 
-  defp unpack_binary(%{binary: true}, value) do
-    Msgpax.Bin.new(value)
+  defp unpack(<<byte, _::bits>>, _result, _options, _outer, _index, _count) do
+    throw {:bad_format, byte}
   end
 
-  defp unpack_binary(_options, value) do
-    value
+  defp unpack(<<_::bits>>, _result, _options, _outer,  _index, _count) do
+    throw :incomplete
   end
 
-  defp unpack_ext(options, type, data) do
+  defp unpack_binary(content, %{binary: true}) do
+    Msgpax.Bin.new(content)
+  end
+
+  defp unpack_binary(content, _options) do
+    content
+  end
+
+  defp unpack_ext(type, content, options) do
     if type in 0..127 do
-      unpack_ext_module(type, data, options)
+      unpack_ext_module(type, content, options)
     else
       throw {:not_supported_ext, type}
     end
@@ -142,17 +146,17 @@ defmodule Msgpax.Unpacker do
 
   @compile {:inline, [unpack_ext_module: 3]}
 
-  defp unpack_ext_module(type, data, %{ext: module}) when is_atom(module) do
-    case module.unpack(Msgpax.Ext.new(type, data)) do
+  defp unpack_ext_module(type, content, %{ext: module}) when is_atom(module) do
+    case module.unpack(Msgpax.Ext.new(type, content)) do
       {:ok, result} ->
         result
       :error ->
-        throw {:ext_unpack_failure, type, module, data}
+        throw {:ext_unpack_failure, type, module, content}
     end
   end
 
-  defp unpack_ext_module(type, data, _options) do
-    Msgpax.Ext.new(type, data)
+  defp unpack_ext_module(type, content, _options) do
+    Msgpax.Ext.new(type, content)
   end
 
   @compile {:inline, [build_collection: 3]}
