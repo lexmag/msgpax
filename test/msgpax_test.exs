@@ -194,13 +194,13 @@ defmodule MsgpaxTest do
   end
 
   test "pack/2: using the :iodata option" do
-    assert Msgpax.pack([], iodata: true) == {:ok, [<<144>>]}
+    assert Msgpax.pack([], iodata: true) == {:ok, [144]}
     assert Msgpax.pack([], iodata: false) == {:ok, <<144>>}
     assert Msgpax.pack([42, <<5::3>>], iodata: false) == {:error, {:not_encodable, <<5::3>>}}
   end
 
   test "pack!/2: using the :iodata option" do
-    assert Msgpax.pack!([], iodata: true) == [<<144>>]
+    assert Msgpax.pack!([], iodata: true) == [144]
     assert Msgpax.pack!([], iodata: false) == <<144>>
     assert_raise Msgpax.PackError, fn ->
       Msgpax.pack!([42, <<5::3>>], iodata: false)

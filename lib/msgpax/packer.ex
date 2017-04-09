@@ -88,9 +88,9 @@ defprotocol Msgpax.Packer do
 end
 
 defimpl Msgpax.Packer, for: Atom do
-  def pack(nil),   do: <<0xC0>>
-  def pack(false), do: <<0xC2>>
-  def pack(true),  do: <<0xC3>>
+  def pack(nil), do: [0xC0]
+  def pack(false), do: [0xC2]
+  def pack(true), do: [0xC3]
   def pack(atom) do
     Atom.to_string(atom)
     |> @protocol.pack
@@ -109,9 +109,9 @@ defimpl Msgpax.Packer, for: BitString do
   defp format(bin) do
     size = byte_size(bin)
     cond do
-      size < 32          -> <<0b101::3, size::5>>
-      size < 256         -> <<0xD9, size::8>>
-      size < 0x10000     -> <<0xDA, size::16>>
+      size < 32 -> 0b10100000 + size
+      size < 256 -> [0xD9, size]
+      size < 0x10000 -> <<0xDA, size::16>>
       size < 0x100000000 -> <<0xDB, size::32>>
 
       true -> throw {:too_big, bin}
@@ -131,11 +131,11 @@ defimpl Msgpax.Packer, for: Map do
   end
 
   defp format(map) do
-    len = Enum.count(map)
+    length = Enum.count(map)
     cond do
-      len < 16          -> <<0b1000::4, len::4>>
-      len < 0x10000     -> <<0xDE, len::16>>
-      len < 0x100000000 -> <<0xDF, len::32>>
+      length < 16 -> 0b10000000 + length
+      length < 0x10000 -> <<0xDE, length::16>>
+      length < 0x100000000 -> <<0xDF, length::32>>
 
       true -> throw {:too_big, map}
     end
@@ -143,7 +143,7 @@ defimpl Msgpax.Packer, for: Map do
 end
 
 defimpl Msgpax.Packer, for: List do
-  def pack([{}]), do: <<128>>
+  def pack([{}]), do: [128]
   def pack([{_, _} | _] = list),
     do: @protocol.Map.pack(list)
 
@@ -154,11 +154,11 @@ defimpl Msgpax.Packer, for: List do
   end
 
   defp format(list) do
-    len = length(list)
+    length = length(list)
     cond do
-      len < 16          -> <<0b1001::4, len::4>>
-      len < 0x10000     -> <<0xDC, len::16>>
-      len < 0x100000000 -> <<0xDD, len::32>>
+      length < 16 -> 0b10010000 + length
+      length < 0x10000 -> <<0xDC, length::16>>
+      length < 0x100000000 -> <<0xDD, length::32>>
 
       true -> throw {:too_big, list}
     end
@@ -174,10 +174,10 @@ end
 defimpl Msgpax.Packer, for: Integer do
   def pack(num) when num < 0 do
     cond do
-      num >= -32                 -> <<0b111::3, num::5>>
-      num >= -128                -> <<0xD0, num>>
-      num >= -0x8000             -> <<0xD1, num::16>>
-      num >= -0x80000000         -> <<0xD2, num::32>>
+      num >= -32 -> [0x100 + num]
+      num >= -128 -> [0xD0, 0x100 + num]
+      num >= -0x8000 -> <<0xD1, num::16>>
+      num >= -0x80000000 -> <<0xD2, num::32>>
       num >= -0x8000000000000000 -> <<0xD3, num::64>>
 
       true -> throw {:too_big, num}
@@ -186,10 +186,10 @@ defimpl Msgpax.Packer, for: Integer do
 
   def pack(num) do
     cond do
-      num < 128                 -> <<0::1, num::7>>
-      num < 256                 -> <<0xCC, num>>
-      num < 0x10000             -> <<0xCD, num::16>>
-      num < 0x100000000         -> <<0xCE, num::32>>
+      num < 128 -> [num]
+      num < 256 -> [0xCC, num]
+      num < 0x10000 -> <<0xCD, num::16>>
+      num < 0x100000000 -> <<0xCE, num::32>>
       num < 0x10000000000000000 -> <<0xCF, num::64>>
 
       true -> throw {:too_big, num}
@@ -204,8 +204,8 @@ defimpl Msgpax.Packer, for: Msgpax.Bin do
   defp format(bin) do
     size = byte_size(bin)
     cond do
-      size < 256         -> <<0xC4, size::8>>
-      size < 0x10000     -> <<0xC5, size::16>>
+      size < 256 -> [0xC4, size]
+      size < 0x10000 -> <<0xC5, size::16>>
       size < 0x100000000 -> <<0xC6, size::32>>
 
       true -> throw {:too_big, bin}
@@ -221,13 +221,13 @@ defimpl Msgpax.Packer, for: Msgpax.Ext do
   defp format(data) do
     size = byte_size(data)
     cond do
-      size == 1          -> <<0xD4>>
-      size == 2          -> <<0xD5>>
-      size == 4          -> <<0xD6>>
-      size == 8          -> <<0xD7>>
-      size == 16         -> <<0xD8>>
-      size < 256         -> <<0xC7, size>>
-      size < 0x10000     -> <<0xC8, size::16>>
+      size == 1 -> [0xD4]
+      size == 2 -> [0xD5]
+      size == 4 -> [0xD6]
+      size == 8 -> [0xD7]
+      size == 16 -> [0xD8]
+      size < 256 -> [0xC7, size]
+      size < 0x10000 -> <<0xC8, size::16>>
       size < 0x100000000 -> <<0xC9, size::32>>
 
       true -> throw {:too_big, data}
