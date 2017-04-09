@@ -92,29 +92,30 @@ defimpl Msgpax.Packer, for: Atom do
   def pack(false), do: [0xC2]
   def pack(true), do: [0xC3]
   def pack(atom) do
-    Atom.to_string(atom)
-    |> @protocol.pack
+    atom
+    |> Atom.to_string()
+    |> @protocol.pack()
   end
 end
 
 defimpl Msgpax.Packer, for: BitString do
-  def pack(bin) when is_binary(bin) do
-    [format(bin) | bin]
+  def pack(binary) when is_binary(binary) do
+    [format(binary) | binary]
   end
 
   def pack(bits) do
     throw {:not_encodable, bits}
   end
 
-  defp format(bin) do
-    size = byte_size(bin)
+  defp format(binary) do
+    size = byte_size(binary)
     cond do
       size < 32 -> 0b10100000 + size
       size < 256 -> [0xD9, size]
       size < 0x10000 -> <<0xDA, size::16>>
       size < 0x100000000 -> <<0xDB, size::32>>
 
-      true -> throw {:too_big, bin}
+      true -> throw {:too_big, binary}
     end
   end
 end
@@ -148,8 +149,8 @@ defimpl Msgpax.Packer, for: List do
     do: @protocol.Map.pack(list)
 
   def pack(list) do
-    for elem <- list, into: [format(list)] do
-      @protocol.pack(elem)
+    for item <- list, into: [format(list)] do
+      @protocol.pack(item)
     end
   end
 
@@ -172,43 +173,43 @@ defimpl Msgpax.Packer, for: Float do
 end
 
 defimpl Msgpax.Packer, for: Integer do
-  def pack(num) when num < 0 do
+  def pack(int) when int < 0 do
     cond do
-      num >= -32 -> [0x100 + num]
-      num >= -128 -> [0xD0, 0x100 + num]
-      num >= -0x8000 -> <<0xD1, num::16>>
-      num >= -0x80000000 -> <<0xD2, num::32>>
-      num >= -0x8000000000000000 -> <<0xD3, num::64>>
+      int >= -32 -> [0x100 + int]
+      int >= -128 -> [0xD0, 0x100 + int]
+      int >= -0x8000 -> <<0xD1, int::16>>
+      int >= -0x80000000 -> <<0xD2, int::32>>
+      int >= -0x8000000000000000 -> <<0xD3, int::64>>
 
-      true -> throw {:too_big, num}
+      true -> throw {:too_big, int}
     end
   end
 
-  def pack(num) do
+  def pack(int) do
     cond do
-      num < 128 -> [num]
-      num < 256 -> [0xCC, num]
-      num < 0x10000 -> <<0xCD, num::16>>
-      num < 0x100000000 -> <<0xCE, num::32>>
-      num < 0x10000000000000000 -> <<0xCF, num::64>>
+      int < 128 -> [int]
+      int < 256 -> [0xCC, int]
+      int < 0x10000 -> <<0xCD, int::16>>
+      int < 0x100000000 -> <<0xCE, int::32>>
+      int < 0x10000000000000000 -> <<0xCF, int::64>>
 
-      true -> throw {:too_big, num}
+      true -> throw {:too_big, int}
     end
   end
 end
 
 defimpl Msgpax.Packer, for: Msgpax.Bin do
-  def pack(%{data: bin}) when is_binary(bin),
-    do: [format(bin) | bin]
+  def pack(%{data: data}) when is_binary(data),
+    do: [format(data) | data]
 
-  defp format(bin) do
-    size = byte_size(bin)
+  defp format(binary) do
+    size = byte_size(binary)
     cond do
       size < 256 -> [0xC4, size]
       size < 0x10000 -> <<0xC5, size::16>>
       size < 0x100000000 -> <<0xC6, size::32>>
 
-      true -> throw {:too_big, bin}
+      true -> throw {:too_big, binary}
     end
   end
 end
