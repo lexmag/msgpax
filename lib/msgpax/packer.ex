@@ -94,7 +94,7 @@ defimpl Msgpax.Packer, for: Atom do
   def pack(atom) do
     atom
     |> Atom.to_string()
-    |> @protocol.pack()
+    |> @protocol.BitString.pack()
   end
 end
 
