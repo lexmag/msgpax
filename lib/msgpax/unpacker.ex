@@ -25,7 +25,7 @@ defmodule Msgpax.Unpacker do
   @moduledoc false
 
   def unpack(<<buffer::bits>>, options) do
-    unpack(buffer, [], options, [:root], 0, 1)
+    unpack(buffer, [], options, [], 0, 1)
   end
 
   primitives = %{
@@ -172,7 +172,7 @@ defmodule Msgpax.Unpacker do
     end
   end
 
-  defp unpack_continue(<<buffer::bits>>, _options, [:root], [value], 1) do
+  defp unpack_continue(<<buffer::bits>>, _options, [], [value], 1) do
     {value, buffer}
   end
 
