@@ -56,7 +56,7 @@ defmodule Msgpax.Unpacker do
     [quote(do: [0b111::3, value::5])] => quote(do: value - 0b100000),
   }
   for {formats, value} <- primitives, format <- formats do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       result = [unquote(value) | result]
       case index + 1 do
         ^count ->
@@ -73,7 +73,7 @@ defmodule Msgpax.Unpacker do
     quote(do: [0xDD, length::32]),
   ]
   for format <- lists do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       case unquote(quote(do: length)) do
         0 ->
           result = [[] | result]
@@ -96,7 +96,7 @@ defmodule Msgpax.Unpacker do
     quote(do: [0xDF, length::32]),
   ]
   for format <- maps do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       case unquote(quote(do: length)) do
         0 ->
           result = [%{} | result]
@@ -119,7 +119,7 @@ defmodule Msgpax.Unpacker do
     quote(do: [0xC6, length::32, content::size(length)-bytes]),
   ]
   for format <- binaries do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       value = unpack_binary(unquote(quote(do: content)), options)
       result = [value | result]
       case index + 1 do
@@ -142,7 +142,7 @@ defmodule Msgpax.Unpacker do
     quote(do: [0xC9, length::32, type, content::size(length)-bytes]),
   ]
   for format <- extensions do
-    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
+    defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       value = unpack_ext(unquote(quote(do: type)), unquote(quote(do: content)), options)
       result = [value | result]
       case index + 1 do
