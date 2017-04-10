@@ -58,12 +58,7 @@ defmodule Msgpax.Unpacker do
   for {formats, value} <- primitives, format <- formats do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       result = [unquote(value) | result]
-      case index + 1 do
-        ^count ->
-          unpack_continue(rest, options, outer, result, count)
-        index ->
-          unpack(rest, result, options, outer, index, count)
-      end
+      unpack_continue(rest, result, options, outer, index, count)
     end
   end
 
@@ -76,14 +71,7 @@ defmodule Msgpax.Unpacker do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       case unquote(quote(do: length)) do
         0 ->
-          result = [[] | result]
-          case index + 1 do
-            ^count ->
-              unpack_continue(rest, options, outer, result, count)
-            index ->
-              unpack(rest, result, options, outer, index, count)
-          end
-
+          unpack_continue(rest, [[] | result], options, outer, index, count)
         length ->
           unpack(rest, result, options, [:list, index, count | outer], 0, length)
       end
@@ -99,14 +87,7 @@ defmodule Msgpax.Unpacker do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       case unquote(quote(do: length)) do
         0 ->
-          result = [%{} | result]
-          case index + 1 do
-            ^count ->
-              unpack_continue(rest, options, outer, result, count)
-            index ->
-              unpack(rest, result, options, outer, index, count)
-          end
-
+          unpack_continue(rest, [%{} | result], options, outer, index, count)
         length ->
           unpack(rest, result, options, [:map, index, count | outer], 0, length * 2)
       end
@@ -121,13 +102,7 @@ defmodule Msgpax.Unpacker do
   for format <- binaries do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       value = unpack_binary(unquote(quote(do: content)), options)
-      result = [value | result]
-      case index + 1 do
-        ^count ->
-          unpack_continue(rest, options, outer, result, count)
-        index ->
-          unpack(rest, result, options, outer, index, count)
-      end
+      unpack_continue(rest, [value | result], options, outer, index, count)
     end
   end
 
@@ -144,13 +119,7 @@ defmodule Msgpax.Unpacker do
   for format <- extensions do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) do
       value = unpack_ext(unquote(quote(do: type)), unquote(quote(do: content)), options)
-      result = [value | result]
-      case index + 1 do
-        ^count ->
-          unpack_continue(rest, options, outer, result, count)
-        index ->
-          unpack(rest, result, options, outer, index, count)
-      end
+      unpack_continue(rest, [value | result], options, outer, index, count)
     end
   end
 
@@ -160,6 +129,17 @@ defmodule Msgpax.Unpacker do
 
   defp unpack(<<_::bits>>, _result, _options, _outer,  _index, _count) do
     throw :incomplete
+  end
+
+  @compile {:inline, [unpack_continue: 6]}
+
+  defp unpack_continue(rest, result, options, outer, index, count) do
+    case index + 1 do
+      ^count ->
+        unpack_continue(rest, options, outer, result, count)
+      index ->
+        unpack(rest, result, options, outer, index, count)
+    end
   end
 
   defp unpack_continue(<<buffer::bits>>, options, [kind, index, length | outer], result, count) do
