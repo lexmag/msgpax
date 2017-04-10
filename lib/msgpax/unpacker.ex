@@ -28,10 +28,6 @@ defmodule Msgpax.Unpacker do
     unpack(buffer, [], options, [:root], 0, 1)
   end
 
-  defp unpack(<<buffer::bits>>, result, options, [kind, index, length | outer], count, count) do
-    unpack(buffer, build_collection(result, count, kind), options, outer, index + 1, length)
-  end
-
   primitives = %{
     [quote(do: [0xC0])] => quote(do: nil),
     [quote(do: [0xC2])] => quote(do: false),
@@ -61,7 +57,13 @@ defmodule Msgpax.Unpacker do
   }
   for {formats, value} <- primitives, format <- formats do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
-      unpack(rest, [unquote(value) | result], options, outer, index + 1, count)
+      result = [unquote(value) | result]
+      case index + 1 do
+        ^count ->
+          unpack_continue(rest, options, outer, result, count)
+        index ->
+          unpack(rest, result, options, outer, index, count)
+      end
     end
   end
 
@@ -72,7 +74,19 @@ defmodule Msgpax.Unpacker do
   ]
   for format <- lists do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
-      unpack(rest, result, options, [:list, index, count | outer], 0, unquote(quote(do: length)))
+      case unquote(quote(do: length)) do
+        0 ->
+          result = [[] | result]
+          case index + 1 do
+            ^count ->
+              unpack_continue(rest, options, outer, result, count)
+            index ->
+              unpack(rest, result, options, outer, index, count)
+          end
+
+        length ->
+          unpack(rest, result, options, [:list, index, count | outer], 0, length)
+      end
     end
   end
 
@@ -83,7 +97,19 @@ defmodule Msgpax.Unpacker do
   ]
   for format <- maps do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
-      unpack(rest, result, options, [:map, index, count | outer], 0, unquote(quote(do: length)) * 2)
+      case unquote(quote(do: length)) do
+        0 ->
+          result = [%{} | result]
+          case index + 1 do
+            ^count ->
+              unpack_continue(rest, options, outer, result, count)
+            index ->
+              unpack(rest, result, options, outer, index, count)
+          end
+
+        length ->
+          unpack(rest, result, options, [:map, index, count | outer], 0, length * 2)
+      end
     end
   end
 
@@ -95,7 +121,13 @@ defmodule Msgpax.Unpacker do
   for format <- binaries do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
       value = unpack_binary(unquote(quote(do: content)), options)
-      unpack(rest, [value | result], options, outer, index + 1, count)
+      result = [value | result]
+      case index + 1 do
+        ^count ->
+          unpack_continue(rest, options, outer, result, count)
+        index ->
+          unpack(rest, result, options, outer, index, count)
+      end
     end
   end
 
@@ -112,12 +144,14 @@ defmodule Msgpax.Unpacker do
   for format <- extensions do
     defp unpack(<<unquote_splicing(format), rest::bits>>, result, options, outer, index, count) when index < count do
       value = unpack_ext(unquote(quote(do: type)), unquote(quote(do: content)), options)
-      unpack(rest, [value | result], options, outer, index + 1, count)
+      result = [value | result]
+      case index + 1 do
+        ^count ->
+          unpack_continue(rest, options, outer, result, count)
+        index ->
+          unpack(rest, result, options, outer, index, count)
+      end
     end
-  end
-
-  defp unpack(<<buffer::bits>>, [value], _options, [:root], count, count) do
-    {value, buffer}
   end
 
   defp unpack(<<byte, _::bits>>, _result, _options, _outer, _index, _count) do
@@ -126,6 +160,20 @@ defmodule Msgpax.Unpacker do
 
   defp unpack(<<_::bits>>, _result, _options, _outer,  _index, _count) do
     throw :incomplete
+  end
+
+  defp unpack_continue(<<buffer::bits>>, options, [kind, index, length | outer], result, count) do
+    result = build_collection(result, count, kind)
+    case index + 1 do
+      ^length ->
+        unpack_continue(buffer, options, outer, result, length)
+      index ->
+        unpack(buffer, result, options, outer, index, length)
+    end
+  end
+
+  defp unpack_continue(<<buffer::bits>>, _options, [:root], [value], 1) do
+    {value, buffer}
   end
 
   defp unpack_binary(content, %{binary: true}) do
