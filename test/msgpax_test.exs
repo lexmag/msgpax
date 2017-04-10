@@ -185,6 +185,12 @@ defmodule MsgpaxTest do
     assert_format -2147483649, [211]
   end
 
+  test "complex structures" do
+    data = %{[[123, "foo"], [true]] => [nil, -45, [%{[] => 10.0}]]}
+    assert_format data, [], data
+    assert_format [data], [], [data]
+  end
+
   test "bitstring" do
     assert_error pack([42, <<5::3>>]), {:not_encodable, <<5::3>>}
   end
@@ -193,13 +199,13 @@ defmodule MsgpaxTest do
     assert_error pack([true, -9223372036854775809]), {:too_big, -9223372036854775809}
   end
 
-  test "pack/2: using the :iodata option" do
+  test "pack/2 with the :iodata option" do
     assert Msgpax.pack([], iodata: true) == {:ok, [144]}
     assert Msgpax.pack([], iodata: false) == {:ok, <<144>>}
     assert Msgpax.pack([42, <<5::3>>], iodata: false) == {:error, {:not_encodable, <<5::3>>}}
   end
 
-  test "pack!/2: using the :iodata option" do
+  test "pack!/2 with the :iodata option" do
     assert Msgpax.pack!([], iodata: true) == [144]
     assert Msgpax.pack!([], iodata: false) == <<144>>
     assert_raise Msgpax.PackError, fn ->
@@ -212,6 +218,7 @@ defmodule MsgpaxTest do
   end
 
   test "bad format" do
+    assert_error unpack(<<145, 191>>), {:bad_format, 191}
     assert_error unpack(<<193, 1>>), {:bad_format, 193}
   end
 
@@ -220,7 +227,7 @@ defmodule MsgpaxTest do
     assert_error unpack(<<5::3>>), :incomplete
   end
 
-  test "unpack_slice" do
+  test "unpack_slice/1" do
     assert Msgpax.unpack_slice(<<255, 1>>) == {:ok, -1, <<1>>}
     assert_error unpack_slice(<<5::3>>), :incomplete
   end
