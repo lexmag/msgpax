@@ -9,8 +9,8 @@ defmodule Msgpax.UnpackError do
     case exception.reason do
       {:excess_bytes, bin} ->
         "found excess bytes: #{inspect(bin)}"
-      {:bad_format, bin} ->
-        "bad format: #{inspect(bin)}"
+      {:bad_format, byte} ->
+        "bad format, first byte: #{byte}"
       :incomplete ->
         "given binary is incomplete"
       {:not_supported_ext, type} ->

@@ -33,7 +33,7 @@ defmodule Msgpax do
 
   @type unpack_error_reason ::
     {:excess_bytes, binary} |
-    {:bad_format, binary} |
+    {:bad_format, integer} |
     :incomplete |
     {:not_supported_ext, integer} |
     {:ext_unpack_failure, Msgpax.Ext.type, module, binary}
@@ -177,7 +177,7 @@ defmodule Msgpax do
       {"foo", "junk"}
 
       iex> Msgpax.unpack_slice!(<<163, "fo">>)
-      ** (Msgpax.UnpackError) bad format: 163
+      ** (Msgpax.UnpackError) bad format, first byte: 163
 
   """
   @spec unpack_slice!(iodata, Keyword.t) :: {any, binary} | no_return
