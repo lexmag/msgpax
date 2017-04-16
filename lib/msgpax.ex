@@ -144,7 +144,7 @@ defmodule Msgpax do
       {:ok, "foo", "junk"}
 
       iex> Msgpax.unpack_slice(<<163, "fo">>)
-      {:error, {:bad_format, 163}}
+      {:error, {:invalid_format, 163}}
 
   """
   @spec unpack_slice(iodata, Keyword.t) :: {:ok, any, binary} | {:error, unpack_error_reason}
@@ -177,7 +177,7 @@ defmodule Msgpax do
       {"foo", "junk"}
 
       iex> Msgpax.unpack_slice!(<<163, "fo">>)
-      ** (Msgpax.UnpackError) bad format, first byte: 163
+      ** (Msgpax.UnpackError) invalid format, first byte: 163
 
   """
   @spec unpack_slice!(iodata, Keyword.t) :: {any, binary} | no_return
