@@ -7,8 +7,8 @@ defmodule Msgpax.UnpackError do
 
   def message(%__MODULE__{} = exception) do
     case exception.reason do
-      {:excess_bytes, bin} ->
-        "found excess bytes: #{inspect(bin)}"
+      {:excess_bytes, bytes} ->
+        "found excess bytes: #{inspect(bytes)}"
       {:bad_format, byte} ->
         "bad format, first byte: #{byte}"
       :incomplete ->
