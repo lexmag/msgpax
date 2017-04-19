@@ -15,8 +15,8 @@ defmodule Msgpax.UnpackError do
         "given binary is incomplete"
       {:not_supported_ext, type} ->
         "extension type is not supported: #{type}"
-      {:ext_unpack_failure, type, module, data} ->
-        "module #{inspect(module)} could not unpack data (extension type #{type}): #{inspect(data)}"
+      {:ext_unpack_failure, module, struct} ->
+        "module #{inspect(module)} could not unpack extension: #{inspect(struct)}"
     end
   end
 end
@@ -166,25 +166,27 @@ defmodule Msgpax.Unpacker do
 
   defp unpack_ext(type, content, options) do
     if type in 0..127 do
-      unpack_ext_module(type, content, options)
+      type
+      |> Msgpax.Ext.new(content)
+      |> unpack_ext(options)
     else
       throw {:not_supported_ext, type}
     end
   end
 
-  @compile {:inline, [unpack_ext_module: 3]}
+  @compile {:inline, [unpack_ext: 2]}
 
-  defp unpack_ext_module(type, content, %{ext: module}) when is_atom(module) do
-    case module.unpack(Msgpax.Ext.new(type, content)) do
+  defp unpack_ext(struct, %{ext: module}) when is_atom(module) do
+    case module.unpack(struct) do
       {:ok, result} ->
         result
       :error ->
-        throw {:ext_unpack_failure, type, module, content}
+        throw {:ext_unpack_failure, module, struct}
     end
   end
 
-  defp unpack_ext_module(type, content, _options) do
-    Msgpax.Ext.new(type, content)
+  defp unpack_ext(struct, _options) do
+    struct
   end
 
   @compile {:inline, [build_collection: 3]}
