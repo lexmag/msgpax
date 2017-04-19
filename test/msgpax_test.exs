@@ -14,15 +14,14 @@ defmodule MsgpaxTest do
     |> Msgpax.Bin.new()
   end
 
-  defp proplist(0), do: [{}]
-  defp proplist(len) do
-    Stream.iterate({0, true}, fn {n, v} -> {n + 1, v} end)
-    |> Enum.take(len)
+  defp map(0) do
+    %{}
   end
 
-  defp map(0), do: %{}
-  defp map(len) do
-    proplist(len)
+  defp map(size) do
+    {0, true}
+    |> Stream.iterate(fn {index, value} -> {index + 1, value} end)
+    |> Enum.take(size)
     |> Enum.into(%{})
   end
 
@@ -105,9 +104,6 @@ defmodule MsgpaxTest do
   test "fixmap" do
     assert_format map(0), [128]
     assert_format map(15), [143]
-
-    assert_format proplist(0), [128], map(0)
-    assert_format proplist(15), [143], map(15)
   end
 
   test "map 16" do
