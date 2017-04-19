@@ -24,67 +24,67 @@ defmodule MsgpaxTest do
   end
 
   test "fixstring" do
-    assert_format string(0), [160]
-    assert_format string(31), [191]
+    assert_format build_string(0), [160]
+    assert_format build_string(31), [191]
   end
 
   test "string 8" do
-    assert_format string(32), [217, 32]
-    assert_format string(255), [217, 255]
+    assert_format build_string(32), [217, 32]
+    assert_format build_string(255), [217, 255]
   end
 
   test "string 16" do
-    assert_format string(0x100), [218, 0x100::16]
-    assert_format string(0xFFFF), [218, 0xFFFF::16]
+    assert_format build_string(0x100), [218, 0x100::16]
+    assert_format build_string(0xFFFF), [218, 0xFFFF::16]
   end
 
   test "string 32" do
-    assert_format string(0x10000), [219, 0x10000::32]
+    assert_format build_string(0x10000), [219, 0x10000::32]
   end
 
   test "binary 8" do
-    assert_format bytes(1), [0xC4, 1], string(1)
-    assert_format bytes(255), [0xC4, 255], string(255)
+    assert_format build_bytes(1), [0xC4, 1], build_string(1)
+    assert_format build_bytes(255), [0xC4, 255], build_string(255)
 
-    assert_format bytes(1), [0xC4, 1], {bytes(1), [binary: true]}
-    assert_format bytes(255), [0xC4, 255], {bytes(255), [binary: true]}
+    assert_format build_bytes(1), [0xC4, 1], {build_bytes(1), [binary: true]}
+    assert_format build_bytes(255), [0xC4, 255], {build_bytes(255), [binary: true]}
   end
 
   test "binary 16" do
-    assert_format bytes(0x100), [0xC5, 0x100::16], string(0x100)
-    assert_format bytes(0xFFFF), [0xC5, 0xFFFF::16], string(0xFFFF)
+    assert_format build_bytes(0x100), [0xC5, 0x100::16], build_string(0x100)
+    assert_format build_bytes(0xFFFF), [0xC5, 0xFFFF::16], build_string(0xFFFF)
   end
 
   test "binary 32" do
-    assert_format bytes(0x10000), [0xC6, 0x10000::32], string(0x10000)
+    assert_format build_bytes(0x10000), [0xC6, 0x10000::32], build_string(0x10000)
   end
 
   test "fixarray" do
-    assert_format list(0), [144]
-    assert_format list(15), [159]
+    assert_format build_list(0), [144]
+    assert_format build_list(15), [159]
   end
 
   test "array 16" do
-    assert_format list(16), [220, 16::16]
-    assert_format list(0xFFFF), [220, 0xFFFF::16]
+    assert_format build_list(16), [220, 16::16]
+    assert_format build_list(0xFFFF), [220, 0xFFFF::16]
   end
 
   test "array 32" do
-    assert_format list(0x10000), [221, 0x10000::32]
+    assert_format build_list(0x10000), [221, 0x10000::32]
   end
 
   test "fixmap" do
-    assert_format map(0), [128]
-    assert_format map(15), [143]
+    assert_format build_map(0), [128]
+    assert_format build_map(15), [143]
   end
 
   test "map 16" do
-    assert_format map(16), [222, 16::16]
-    assert_format map(0xFFFF), [222, 0xFFFF::16]
+    assert_format build_map(16), [222, 16::16]
+    assert_format build_map(0xFFFF), [222, 0xFFFF::16]
   end
 
   test "map 32" do
-    assert_format map(0x10000), [223, 0x10000::32]
+    assert_format build_map(0x10000), [223, 0x10000::32]
   end
 
   test "booleans" do
@@ -216,23 +216,23 @@ defmodule MsgpaxTest do
     assert Msgpax.pack!(%UserDerivingStructField{name: "Juri"}) == expected
   end
 
-  defp string(length) do
+  defp build_string(length) do
     String.duplicate(".", length)
   end
 
-  defp list(length) do
+  defp build_list(length) do
     List.duplicate(nil, length)
   end
 
-  defp bytes(size) do
-    size |> string() |> Msgpax.Bin.new()
+  defp build_bytes(size) do
+    size |> build_string() |> Msgpax.Bin.new()
   end
 
-  defp map(0) do
+  defp build_map(0) do
     %{}
   end
 
-  defp map(size) do
+  defp build_map(size) do
     {0, true}
     |> Stream.iterate(fn {index, value} -> {index + 1, value} end)
     |> Enum.take(size)
