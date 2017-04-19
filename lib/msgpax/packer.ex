@@ -144,10 +144,6 @@ defimpl Msgpax.Packer, for: Map do
 end
 
 defimpl Msgpax.Packer, for: List do
-  def pack([{}]), do: [128]
-  def pack([{_, _} | _] = list),
-    do: @protocol.Map.pack(list)
-
   def pack(list) do
     for item <- list, into: [format(list)] do
       @protocol.pack(item)
