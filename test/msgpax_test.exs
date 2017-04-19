@@ -185,9 +185,9 @@ defmodule MsgpaxTest do
     assert Msgpax.unpack(<<255, 1, 2>>) == {:error, {:excess_bytes, <<1, 2>>}}
   end
 
-  test "bad format" do
-    assert Msgpax.unpack(<<145, 191>>) == {:error, {:bad_format, 191}}
-    assert Msgpax.unpack(<<193, 1>>) == {:error, {:bad_format, 193}}
+  test "invalid format" do
+    assert Msgpax.unpack(<<145, 191>>) == {:error, {:invalid_format, 191}}
+    assert Msgpax.unpack(<<193, 1>>) == {:error, {:invalid_format, 193}}
   end
 
   test "incomplete binary" do
