@@ -8,7 +8,7 @@ defmodule Msgpax.UnpackError do
             {:bad_format, integer} |
             :incomplete |
             {:not_supported_ext, integer} |
-            {:ext_unpack_failure, module, struct},
+            {:ext_unpack_failure, module, map},
   }
 
   defexception [:reason]
