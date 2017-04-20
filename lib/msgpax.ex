@@ -48,7 +48,7 @@ defmodule Msgpax do
   a binary, you can use `IO.iodata_to_binary/1` or use the `:iodata` option (see
   the "Options" section below).
 
-  This function returns `{:ok, iodata}` if the serialization is sucessful,
+  This function returns `{:ok, iodata}` if the serialization is successful,
   `{:error, reason}` otherwise. Reason can be:
 
     * `{:bad_arg, term}` - means that the given argument is not serializable. For
