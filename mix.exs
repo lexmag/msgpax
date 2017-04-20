@@ -10,6 +10,7 @@ defmodule Msgpax.Mixfile do
      consolidate_protocols: Mix.env != :test,
      description: description(),
      deps: deps(),
+     dialyzer: [flags: ["-Wunmatched_returns", :error_handling, :race_conditions, :underspecs]],
      package: package(),
      name: "Msgpax",
      docs: [main: "Msgpax",

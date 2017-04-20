@@ -1,6 +1,8 @@
 defmodule Msgpax.ExtTest do
   use Msgpax.Case, async: true
 
+  alias Msgpax.UnpackError
+
   defmodule Sample do
     defstruct [:seed, :size]
 
@@ -84,12 +86,12 @@ defmodule Msgpax.ExtTest do
   end
 
   test "broken ext" do
-    assert {:error, reason} = Msgpax.unpack(<<0xD4, 42, 65>>, %{ext: Broken})
+    assert {:error, %UnpackError{reason: reason}} = Msgpax.unpack(<<0xD4, 42, 65>>, %{ext: Broken})
     assert reason == {:ext_unpack_failure, Broken, Msgpax.Ext.new(42, "A")}
   end
 
   test "bad ext type" do
-    assert {:error, reason} = Msgpax.unpack(<<0xD4, -1, 65>>)
+    assert {:error, %UnpackError{reason: reason}} = Msgpax.unpack(<<0xD4, -1, 65>>)
     assert reason == {:not_supported_ext, 255}
   end
 end

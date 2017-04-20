@@ -3,6 +3,9 @@ defmodule MsgpaxTest do
 
   doctest Msgpax
 
+  alias Msgpax.PackError
+  alias Msgpax.UnpackError
+
   defmodule User do
     @derive [Msgpax.Packer]
     defstruct [:name]
@@ -160,17 +163,17 @@ defmodule MsgpaxTest do
   end
 
   test "bitstring" do
-    assert Msgpax.pack([42, <<5::3>>]) == {:error, {:not_encodable, <<5::3>>}}
+    assert Msgpax.pack([42, <<5::3>>]) == {:error, %PackError{reason: {:not_encodable, <<5::3>>}}}
   end
 
   test "too big data" do
-    assert Msgpax.pack([true, -9223372036854775809]) == {:error, {:too_big, -9223372036854775809}}
+    assert Msgpax.pack([true, -9223372036854775809]) == {:error, %PackError{reason: {:too_big, -9223372036854775809}}}
   end
 
   test "pack/2 with the :iodata option" do
     assert Msgpax.pack([], iodata: true) == {:ok, [144]}
     assert Msgpax.pack([], iodata: false) == {:ok, <<144>>}
-    assert Msgpax.pack([42, <<5::3>>], iodata: false) == {:error, {:not_encodable, <<5::3>>}}
+    assert Msgpax.pack([42, <<5::3>>], iodata: false) == {:error, %PackError{reason: {:not_encodable, <<5::3>>}}}
   end
 
   test "pack!/2 with the :iodata option" do
@@ -182,22 +185,22 @@ defmodule MsgpaxTest do
   end
 
   test "excess bytes" do
-    assert Msgpax.unpack(<<255, 1, 2>>) == {:error, {:excess_bytes, <<1, 2>>}}
+    assert Msgpax.unpack(<<255, 1, 2>>) == {:error, %UnpackError{reason: {:excess_bytes, <<1, 2>>}}}
   end
 
   test "invalid format" do
-    assert Msgpax.unpack(<<145, 191>>) == {:error, {:invalid_format, 191}}
-    assert Msgpax.unpack(<<193, 1>>) == {:error, {:invalid_format, 193}}
+    assert Msgpax.unpack(<<145, 191>>) == {:error, %UnpackError{reason: {:invalid_format, 191}}}
+    assert Msgpax.unpack(<<193, 1>>) == {:error, %UnpackError{reason: {:invalid_format, 193}}}
   end
 
   test "incomplete binary" do
-    assert Msgpax.unpack(<<147, 1, 2>>) == {:error, :incomplete}
-    assert Msgpax.unpack(<<5::3>>) == {:error, :incomplete}
+    assert Msgpax.unpack(<<147, 1, 2>>) == {:error, %UnpackError{reason: :incomplete}}
+    assert Msgpax.unpack(<<5::3>>) == {:error, %UnpackError{reason: :incomplete}}
   end
 
   test "unpack_slice/1" do
     assert Msgpax.unpack_slice(<<255, 1>>) == {:ok, -1, <<1>>}
-    assert Msgpax.unpack_slice(<<5::3>>) == {:error, :incomplete}
+    assert Msgpax.unpack_slice(<<5::3>>) == {:error, %UnpackError{reason: :incomplete}}
   end
 
   test "deriving" do

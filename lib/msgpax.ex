@@ -27,17 +27,6 @@ defmodule Msgpax do
 
   """
 
-  @type pack_error_reason ::
-    {:too_big, any} |
-    {:not_encodable, any}
-
-  @type unpack_error_reason ::
-    {:excess_bytes, binary} |
-    {:bad_format, integer} |
-    :incomplete |
-    {:not_supported_ext, integer} |
-    {:ext_unpack_failure, Msgpax.Ext.type, module, binary}
-
   alias __MODULE__.Packer
   alias __MODULE__.Unpacker
 
@@ -49,15 +38,10 @@ defmodule Msgpax do
   the "Options" section below).
 
   This function returns `{:ok, iodata}` if the serialization is successful,
-  `{:error, reason}` otherwise. Reason can be:
-
-    * `{:bad_arg, term}` - means that the given argument is not serializable. For
-      example, this is returned when you try to pack bits instead of a binary
-      (as only binaries can be serialized).
-    * `{:too_big, term}` - means that the given term is too big to be
-      encoded. What "too big" means depends on the term being encoded; for
-      example, integers larger than `18446744073709551616` are too big to be
-      encoded with MessagePack.
+  `{:error, exception}` otherwise, where `exception` is a `Msgpax.PackError`
+  struct. Since `exception` is a valid exception, it can be raised and converted
+  to a more human-friendly error message with `Exception.message/1.` See
+  `Msgpax.PackError` for all the possible reasons for a packing error.
 
   ## Options
 
@@ -71,21 +55,21 @@ defmodule Msgpax do
       <<163, 102, 111, 111>>
 
       iex> Msgpax.pack(20000000000000000000)
-      {:error, {:too_big, 20000000000000000000}}
+      {:error, %Msgpax.PackError{reason: {:too_big, 20000000000000000000}}}
 
       iex> Msgpax.pack("foo", iodata: false)
       {:ok, <<163, 102, 111, 111>>}
 
   """
-  @spec pack(term, Keyword.t) :: {:ok, iodata} | {:error, pack_error_reason}
+  @spec pack(term, Keyword.t) :: {:ok, iodata} | {:error, Msgpax.PackError.t}
   def pack(term, options \\ []) do
     iodata? = Keyword.get(options, :iodata, true)
 
     try do
       Packer.pack(term)
     catch
-      :throw, reason ->
-        {:error, reason}
+      :throw, error ->
+        {:error, error}
     else
       iodata when iodata? ->
         {:ok, iodata}
@@ -98,7 +82,7 @@ defmodule Msgpax do
   Works as `pack/1`, but raises if there's an error.
 
   This function works like `pack/1`, except it returns the `term` (instead of
-  `{:ok, term}`) if the serialization is successful and raises a
+  `{:ok, term}`) if the serialization is successful or raises a
   `Msgpax.PackError` exception otherwise.
 
   ## Options
@@ -122,8 +106,8 @@ defmodule Msgpax do
     case pack(term, options) do
       {:ok, result} ->
         result
-      {:error, reason} ->
-        raise Msgpax.PackError, reason: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -134,7 +118,8 @@ defmodule Msgpax do
   a MessagePack-serialized term with nothing after that, it accepts leftover
   bytes at the end of `iodata` and only de-serializes the part of the input that
   makes sense. It returns `{:ok, term, rest}` if de-serialization is successful,
-  `{:error, reason}` otherwise.
+  `{:error, exception}` otherwise (where `exception` is a `Msgpax.Unpacker`
+  struct).
 
   See `unpack/2` for more information on the supported options.
 
@@ -144,10 +129,10 @@ defmodule Msgpax do
       {:ok, "foo", "junk"}
 
       iex> Msgpax.unpack_slice(<<163, "fo">>)
-      {:error, {:invalid_format, 163}}
+      {:error, %Msgpax.UnpackError{reason: {:invalid_format, 163}}}
 
   """
-  @spec unpack_slice(iodata, Keyword.t) :: {:ok, any, binary} | {:error, unpack_error_reason}
+  @spec unpack_slice(iodata, Keyword.t) :: {:ok, any, binary} | {:error, Msgpax.UnpackError.t}
   def unpack_slice(iodata, opts \\ []) do
     opts = Enum.into(opts, %{})
 
@@ -156,8 +141,8 @@ defmodule Msgpax do
       |> IO.iodata_to_binary()
       |> Unpacker.unpack(opts)
     catch
-      :throw, reason ->
-        {:error, reason}
+      :throw, error ->
+        {:error, error}
     else
       {value, rest} ->
         {:ok, value, rest}
@@ -185,16 +170,23 @@ defmodule Msgpax do
     case unpack_slice(iodata, opts) do
       {:ok, value, rest} ->
         {value, rest}
-      {:error, reason} ->
-        raise Msgpax.UnpackError, reason: reason
+      {:error, error} ->
+        raise error
     end
   end
 
   @doc """
   De-serializes the given `iodata`.
 
-  This function de-serializes the given `iodata` into an Elixir term. It returns
+   It returns
   `{:ok, term}` if de-serialization is successful, `{:error, reason}` otherwise.
+
+  This function de-serializes the given `iodata` into an Elixir term. It returns
+  `{:ok, term}` if the de-serialization is successful, `{:error, exception}`
+  otherwise, where `exception` is a `Msgpax.UnpackError` struct. Since
+  `exception` is a valid exception, it can be raised and converted to a more
+  human-friendly error message with `Exception.message/1.` See
+  `Msgpax.UnpackError` for all the possible reasons for an unpacking error.
 
   ## Options
 
@@ -209,7 +201,7 @@ defmodule Msgpax do
       {:ok, "foo"}
 
       iex> Msgpax.unpack(<<163, "foo", "junk">>)
-      {:error, {:excess_bytes, "junk"}}
+      {:error, %Msgpax.UnpackError{reason: {:excess_bytes, "junk"}}}
 
       iex> packed = Msgpax.pack!(Msgpax.Bin.new(<<3, 18, 122, 27, 115>>))
       iex> {:ok, bin} = Msgpax.unpack(packed, binary: true)
@@ -217,13 +209,13 @@ defmodule Msgpax do
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
-  @spec unpack(iodata, Keyword.t) :: {:ok, any} | {:error, unpack_error_reason}
+  @spec unpack(iodata, Keyword.t) :: {:ok, any} | {:error, Msgpax.UnpackError.t}
   def unpack(iodata, opts \\ []) do
     case unpack_slice(iodata, opts) do
       {:ok, value, <<>>} ->
         {:ok, value}
       {:ok, _, bytes} ->
-        {:error, {:excess_bytes, bytes}}
+        {:error, %Msgpax.UnpackError{reason: {:excess_bytes, bytes}}}
       {:error, _} = error ->
         error
     end
@@ -254,8 +246,8 @@ defmodule Msgpax do
     case unpack(iodata, opts) do
       {:ok, value} ->
         value
-      {:error, reason} ->
-        raise Msgpax.UnpackError, reason: reason
+      {:error, error} ->
+        raise error
     end
   end
 end
