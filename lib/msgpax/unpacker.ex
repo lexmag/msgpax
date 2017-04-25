@@ -173,11 +173,17 @@ defmodule Msgpax.Unpacker do
   end
 
   defp unpack_ext(type, content, options) do
-    if type in 0..127 do
-      type
-      |> Msgpax.Ext.new(content)
-      |> unpack_ext(options)
-    else
+    cond do
+      type in 0..127 ->
+        type
+        |> Msgpax.Ext.new(content)
+        |> unpack_ext(options)
+      type in 128..255 ->
+        type = type - 256
+        type
+        |> Msgpax.Ext.new(content)
+        |> unpack_ext(%{ext: Msgpax.Ext.RsvdUnpacker})
+      true ->
       throw({:not_supported_ext, type})
     end
   end

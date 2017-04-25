@@ -66,7 +66,7 @@ defmodule Msgpax.Ext do
 
   """
 
-  @type type :: 0..127
+  @type type :: -128..127
 
   @type t :: %__MODULE__{
     type: type,
@@ -90,7 +90,7 @@ defmodule Msgpax.Ext do
 
   """
   def new(type, data)
-      when type in 0..127 and is_binary(data) do
+      when type in -128..127 and is_binary(data) do
     %__MODULE__{type: type, data: data}
   end
 
