@@ -69,7 +69,7 @@ defmodule Msgpax do
       Packer.pack(term)
     catch
       :throw, error ->
-        {:error, error}
+        {:error, %Msgpax.PackError{reason: error}}
     else
       iodata when iodata? ->
         {:ok, iodata}
@@ -118,7 +118,7 @@ defmodule Msgpax do
   a MessagePack-serialized term with nothing after that, it accepts leftover
   bytes at the end of `iodata` and only de-serializes the part of the input that
   makes sense. It returns `{:ok, term, rest}` if de-serialization is successful,
-  `{:error, exception}` otherwise (where `exception` is a `Msgpax.Unpacker`
+  `{:error, exception}` otherwise (where `exception` is a `Msgpax.UnpackError`
   struct).
 
   See `unpack/2` for more information on the supported options.
@@ -142,7 +142,7 @@ defmodule Msgpax do
       |> Unpacker.unpack(opts)
     catch
       :throw, error ->
-        {:error, error}
+        {:error, %Msgpax.UnpackError{reason: error}}
     else
       {value, rest} ->
         {:ok, value, rest}
