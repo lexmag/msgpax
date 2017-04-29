@@ -68,8 +68,8 @@ defmodule Msgpax do
     try do
       Packer.pack(term)
     catch
-      :throw, error ->
-        {:error, %Msgpax.PackError{reason: error}}
+      :throw, reason ->
+        {:error, %Msgpax.PackError{reason: reason}}
     else
       iodata when iodata? ->
         {:ok, iodata}
@@ -141,8 +141,8 @@ defmodule Msgpax do
       |> IO.iodata_to_binary()
       |> Unpacker.unpack(opts)
     catch
-      :throw, error ->
-        {:error, %Msgpax.UnpackError{reason: error}}
+      :throw, reason ->
+        {:error, %Msgpax.UnpackError{reason: reason}}
     else
       {value, rest} ->
         {:ok, value, rest}
@@ -170,8 +170,8 @@ defmodule Msgpax do
     case unpack_slice(iodata, opts) do
       {:ok, value, rest} ->
         {value, rest}
-      {:error, error} ->
-        raise error
+      {:error, exception} ->
+        raise exception
     end
   end
 
