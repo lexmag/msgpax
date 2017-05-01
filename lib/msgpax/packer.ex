@@ -1,7 +1,24 @@
 defmodule Msgpax.PackError do
   @moduledoc """
-  Raised when there's an error in serializing an Elixir term.
+  Exception that represents an error in packing terms.
+
+  This exception has a `:reason` field that can have one of the following
+  values:
+
+    * `{:not_encodable, term}` - means that the given argument is not
+      serializable. For example, this is returned when you try to pack bits
+      instead of a binary (as only binaries can be serialized).
+
+    * `{:too_big, term}` - means that the given term is too big to be
+      encoded. What "too big" means depends on the term being encoded; for
+      example, integers larger than `18_446_744_073_709_551_616` are too big to be
+      encoded with MessagePack.
+
   """
+
+  @type t :: %__MODULE__{
+    reason: {:too_big, any} | {:not_encodable, any},
+  }
 
   defexception [:reason]
 
@@ -104,7 +121,7 @@ defimpl Msgpax.Packer, for: BitString do
   end
 
   def pack(bits) do
-    throw {:not_encodable, bits}
+    throw({:not_encodable, bits})
   end
 
   defp format(binary) do
@@ -115,7 +132,7 @@ defimpl Msgpax.Packer, for: BitString do
       size < 0x10000 -> <<0xDA, size::16>>
       size < 0x100000000 -> <<0xDB, size::32>>
 
-      true -> throw {:too_big, binary}
+      true -> throw({:too_big, binary})
     end
   end
 end
@@ -138,7 +155,7 @@ defimpl Msgpax.Packer, for: Map do
       length < 0x10000 -> <<0xDE, length::16>>
       length < 0x100000000 -> <<0xDF, length::32>>
 
-      true -> throw {:too_big, map}
+      true -> throw({:too_big, map})
     end
   end
 end
@@ -157,7 +174,7 @@ defimpl Msgpax.Packer, for: List do
       length < 0x10000 -> <<0xDC, length::16>>
       length < 0x100000000 -> <<0xDD, length::32>>
 
-      true -> throw {:too_big, list}
+      true -> throw({:too_big, list})
     end
   end
 end
@@ -177,7 +194,7 @@ defimpl Msgpax.Packer, for: Integer do
       int >= -0x80000000 -> <<0xD2, int::32>>
       int >= -0x8000000000000000 -> <<0xD3, int::64>>
 
-      true -> throw {:too_big, int}
+      true -> throw({:too_big, int})
     end
   end
 
@@ -189,7 +206,7 @@ defimpl Msgpax.Packer, for: Integer do
       int < 0x100000000 -> <<0xCE, int::32>>
       int < 0x10000000000000000 -> <<0xCF, int::64>>
 
-      true -> throw {:too_big, int}
+      true -> throw({:too_big, int})
     end
   end
 end
@@ -205,7 +222,7 @@ defimpl Msgpax.Packer, for: Msgpax.Bin do
       size < 0x10000 -> <<0xC5, size::16>>
       size < 0x100000000 -> <<0xC6, size::32>>
 
-      true -> throw {:too_big, binary}
+      true -> throw({:too_big, binary})
     end
   end
 end
@@ -227,7 +244,7 @@ defimpl Msgpax.Packer, for: Msgpax.Ext do
       size < 0x10000 -> <<0xC8, size::16>>
       size < 0x100000000 -> <<0xC9, size::32>>
 
-      true -> throw {:too_big, data}
+      true -> throw({:too_big, data})
     end
   end
 end
