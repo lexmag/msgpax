@@ -5,7 +5,7 @@ defmodule Msgpax.PackError do
   This exception has a `:reason` field that can have one of the following
   values:
 
-    * `{:bad_arg, term}` - means that the given argument is not
+    * `{:not_encodable, term}` - means that the given argument is not
       serializable. For example, this is returned when you try to pack bits
       instead of a binary (as only binaries can be serialized).
 
