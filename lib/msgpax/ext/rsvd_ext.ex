@@ -45,12 +45,12 @@ defmodule Msgpax.Ext.RsvdUnpacker do
       if (seconds >>> 34) == 0 do
         data64 = nanoseconds <<< 34 ||| seconds
         if (data64 &&& 18446744069414584320) == 0 do
-          <<0xd6, -1>> <> <<seconds::32>>
+          <<seconds::32>>
         else
-          <<0xd7, -1>> <> <<data64::64>>
+          <<data64::64>>
         end
       else
-        <<0xc7, 12, -1>> <> <<nanoseconds::32>> <> <<seconds::64>>
+        <<nanoseconds::32>> <> <<seconds::64>>
       end
     end
   end
@@ -79,19 +79,18 @@ defmodule Msgpax.Ext.RsvdUnpacker do
    }
   """
   def unpack(%Msgpax.Ext{type: -1, data: data}) do
-    <<ext_type, bin::binary>> = data
-    case ext_type do
-      0xd6 ->
-        <<_ext, seconds::32>> = bin
+    case byte_size(data) do
+      4 ->
+        <<seconds::32>> = data
         DateTime.from_unix(seconds)
-      0xd7 ->
-        <<_ext, data64::64>> = bin
+      8 ->
+        <<data64::64>> = data
         nanoseconds = data64 >>> 34;
         seconds = data64 &&& 17179869183
         total_nanos = seconds * 1000000000 + nanoseconds
         DateTime.from_unix(total_nanos, :nanosecond)
-      0xc7 ->
-        <<_ext, _, nanoseconds::32, seconds::64 >> = bin
+      12 ->
+        <<nanoseconds::32, seconds::64 >> = data
         total_nanos = seconds * 1000000000 + nanoseconds
         DateTime.from_unix(total_nanos, :nanosecond)
       _->
