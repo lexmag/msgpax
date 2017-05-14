@@ -90,8 +90,8 @@ defmodule Msgpax.ExtTest do
     assert reason == {:ext_unpack_failure, Broken, Msgpax.Ext.new(42, "A")}
   end
 
-  test "bad ext type" do
-    assert {:error, %UnpackError{reason: reason}} = Msgpax.unpack(<<0xD4, -1, 65>>)
-    assert reason == {:not_supported_ext, 255}
+  test "not supported reserved ext type" do
+    assert {:error, %UnpackError{reason: reason}} = Msgpax.unpack(<<0xD4, -5, 65>>)
+    assert reason == {:not_supported_reserved_ext, -5}
   end
 end
