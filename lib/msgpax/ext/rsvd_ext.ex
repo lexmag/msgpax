@@ -90,8 +90,16 @@ defmodule Msgpax.Ext.RsvdUnpacker do
         total_nanos = seconds * 1000000000 + nanoseconds
         DateTime.from_unix(total_nanos, :nanosecond)
       12 ->
-        <<nanoseconds::32, seconds::64 >> = data
+        <<nanoseconds::32, seconds::64>> = data
         total_nanos = seconds * 1000000000 + nanoseconds
+        #Erlang only support datetime max to #<DateTime(9999-12-31T23:59:59Z Etc/UTC)>
+        #min to #<DateTime(0000-01-01T00:00:00Z Etc/UTC)> 
+        total_nanos = 
+        cond do
+          total_nanos < -62167219200000000000 -> -62167219200000000000
+          total_nanos > 253402300799999999999 -> 253402300799999999999
+          true -> total_nanos
+        end
         DateTime.from_unix(total_nanos, :nanosecond)
       _->
         :error
