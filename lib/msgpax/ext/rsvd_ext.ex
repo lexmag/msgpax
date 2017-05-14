@@ -105,4 +105,8 @@ defmodule Msgpax.Ext.RsvdUnpacker do
         :error
     end
   end
+  
+  def unpack(%Msgpax.Ext{type: type, data: _}) do
+    throw({:not_supported_reserved_ext, type})
+  end
 end
