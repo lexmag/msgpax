@@ -149,7 +149,7 @@ defimpl Msgpax.Packer, for: Map do
   end
 
   defp format(map) do
-    length = Enum.count(map)
+    length = map_size(map)
     cond do
       length < 16 -> 0b10000000 + length
       length < 0x10000 -> <<0xDE, length::16>>
