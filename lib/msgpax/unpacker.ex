@@ -33,7 +33,7 @@ defmodule Msgpax.Unpacker do
   @moduledoc false
 
   def unpack(<<buffer::bits>>, options) do
-    unpack(buffer, [], options, [], 0, 1)
+    unpack(buffer, [], Map.new(options), [], 0, 1)
   end
 
   primitives = %{

@@ -9,10 +9,8 @@ defmodule Msgpax.Case do
     end
   end
 
-  @new_map_ast quote(do: %{})
-
   defmacro assert_format(data, format) do
-    round_trip(data, format, data, @new_map_ast)
+    round_trip(data, format, data, [])
   end
 
   defmacro assert_format(input, format, {output, opts}) do
@@ -20,14 +18,14 @@ defmodule Msgpax.Case do
   end
 
   defmacro assert_format(input, format, output) do
-    round_trip(input, format, output, @new_map_ast)
+    round_trip(input, format, output, [])
   end
 
-  defp round_trip(input, format, output, opts) do
+  defp round_trip(input, format, output, options) do
     quote do
       assert {:ok, packed} = Msgpax.pack(unquote(input))
       assert <<unquote_splicing(format), _::bytes>> = IO.iodata_to_binary(packed)
-      assert {:ok, unpacked} = Msgpax.unpack(packed, unquote(opts))
+      assert {:ok, unpacked} = Msgpax.unpack(packed, unquote(options))
       assert unpacked == unquote(output)
     end
   end

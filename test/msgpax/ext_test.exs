@@ -86,7 +86,7 @@ defmodule Msgpax.ExtTest do
   end
 
   test "broken ext" do
-    assert {:error, %UnpackError{reason: reason}} = Msgpax.unpack(<<0xD4, 42, 65>>, %{ext: Broken})
+    assert {:error, %UnpackError{reason: reason}} = Msgpax.unpack(<<0xD4, 42, 65>>, ext: Broken)
     assert reason == {:ext_unpack_failure, Broken, Msgpax.Ext.new(42, "A")}
   end
 

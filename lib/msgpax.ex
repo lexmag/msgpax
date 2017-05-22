@@ -62,7 +62,7 @@ defmodule Msgpax do
 
   """
   @spec pack(term, Keyword.t) :: {:ok, iodata} | {:error, Msgpax.PackError.t}
-  def pack(term, options \\ []) do
+  def pack(term, options \\ []) when is_list(options) do
     iodata? = Keyword.get(options, :iodata, true)
 
     try do
@@ -133,13 +133,11 @@ defmodule Msgpax do
 
   """
   @spec unpack_slice(iodata, Keyword.t) :: {:ok, any, binary} | {:error, Msgpax.UnpackError.t}
-  def unpack_slice(iodata, opts \\ []) do
-    opts = Enum.into(opts, %{})
-
+  def unpack_slice(iodata, options \\ []) when is_list(options) do
     try do
       iodata
       |> IO.iodata_to_binary()
-      |> Unpacker.unpack(opts)
+      |> Unpacker.unpack(options)
     catch
       :throw, reason ->
         {:error, %Msgpax.UnpackError{reason: reason}}
@@ -166,8 +164,8 @@ defmodule Msgpax do
 
   """
   @spec unpack_slice!(iodata, Keyword.t) :: {any, binary} | no_return
-  def unpack_slice!(iodata, opts \\ []) do
-    case unpack_slice(iodata, opts) do
+  def unpack_slice!(iodata, options \\ []) do
+    case unpack_slice(iodata, options) do
       {:ok, value, rest} ->
         {value, rest}
       {:error, exception} ->
@@ -207,8 +205,8 @@ defmodule Msgpax do
 
   """
   @spec unpack(iodata, Keyword.t) :: {:ok, any} | {:error, Msgpax.UnpackError.t}
-  def unpack(iodata, opts \\ []) do
-    case unpack_slice(iodata, opts) do
+  def unpack(iodata, options \\ []) do
+    case unpack_slice(iodata, options) do
       {:ok, value, <<>>} ->
         {:ok, value}
       {:ok, _, bytes} ->
@@ -239,8 +237,8 @@ defmodule Msgpax do
 
   """
   @spec unpack!(iodata, Keyword.t) :: any | no_return
-  def unpack!(iodata, opts \\ []) do
-    case unpack(iodata, opts) do
+  def unpack!(iodata, options \\ []) do
+    case unpack(iodata, options) do
       {:ok, value} ->
         value
       {:error, exception} ->
