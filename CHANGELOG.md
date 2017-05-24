@@ -8,7 +8,7 @@
 __Breaking changes:__
 
 * Dropped support for Elixir versions before 1.4.
-* Converted all error reasons to proper exceptions: non-raising functions now return `{:error, Msgpax.PackError | Msgpax.UnpackError}` in case of failure instead of `{:error, term}`.
+* Converted all error reasons to proper exceptions: non-raising functions now return `{:error, Msgpax.PackError.t | Msgpax.UnpackError.t}` in case of failure instead of `{:error, term}`.
 * Stopped packing keyword lists as maps and started raising an exception when trying to pack a keyword list: from now on explicit conversion from keyword lists to maps is required, or alternatively the `Msgpax.Packer` protocol must be implemented for tuples.
 
 ## v1.1.0
