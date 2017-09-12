@@ -219,6 +219,24 @@ defmodule MsgpaxTest do
     assert Msgpax.pack!(%UserDerivingStructField{name: "Juri"}) == expected
   end
 
+  test "timestamp" do
+    {_, date, _} =DateTime.from_iso8601("0001-01-01T00:00:00Z")
+    bin = Msgpax.pack!(date, iodata: false)
+    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
+
+    {_, date, _} =DateTime.from_iso8601("1970-01-01T00:00:00Z")
+    bin = Msgpax.pack!(date, iodata: false)
+    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
+    
+    date = DateTime.utc_now
+    bin = Msgpax.pack!(date, iodata: false)
+    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
+    
+    {_, date, _} =DateTime.from_iso8601("9999-12-31T23:59:59Z")
+    bin = Msgpax.pack!(date, iodata: false)
+    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
+  end
+
   defp build_string(length) do
     String.duplicate(".", length)
   end
