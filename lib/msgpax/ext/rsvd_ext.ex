@@ -81,20 +81,20 @@ defmodule Msgpax.Ext.RsvdUnpacker do
   def unpack(%Msgpax.Ext{type: -1, data: data}) do
     case byte_size(data) do
       4 ->
-        <<seconds::32>> = data
+        <<seconds::big-integer-size(32)>> = data
         DateTime.from_unix(seconds)
       8 ->
-        <<data64::64>> = data
+        <<data64::big-integer-size(64)>> = data
         nanoseconds = data64 >>> 34;
         seconds = data64 &&& 17179869183
         total_nanos = seconds * 1000000000 + nanoseconds
         DateTime.from_unix(total_nanos, :nanosecond)
       12 ->
-        <<nanoseconds::32, seconds::64>> = data
+        <<nanoseconds::big-integer-size(32), seconds::signed-big-integer-size(64)>> = data
         total_nanos = seconds * 1000000000 + nanoseconds
         #Erlang only support datetime max to #<DateTime(9999-12-31T23:59:59Z Etc/UTC)>
-        #min to #<DateTime(0000-01-01T00:00:00Z Etc/UTC)> 
-        total_nanos = 
+        #min to #<DateTime(0000-01-01T00:00:00Z Etc/UTC)>
+        total_nanos =
         cond do
           total_nanos < -62167219200000000000 -> -62167219200000000000
           total_nanos > 253402300799000000999 -> 253402300799000000999
@@ -105,7 +105,7 @@ defmodule Msgpax.Ext.RsvdUnpacker do
         :error
     end
   end
-  
+
   def unpack(%Msgpax.Ext{type: type, data: _}) do
     throw({:not_supported_reserved_ext, type})
   end
