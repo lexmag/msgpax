@@ -97,7 +97,7 @@ defmodule Msgpax.Ext.RsvdUnpacker do
         total_nanos = 
         cond do
           total_nanos < -62167219200000000000 -> -62167219200000000000
-          total_nanos > 253402300799999999999 -> 253402300799999999999
+          total_nanos > 253402300799000000999 -> 253402300799000000999
           true -> total_nanos
         end
         DateTime.from_unix(total_nanos, :nanosecond)
