@@ -47,7 +47,7 @@ defmodule Msgpax do
   ## Options
 
     * `:iodata` - (boolean) if `true`, this function returns the encoded term as
-      iodata, if `false` as a binary.
+      iodata, if `false` as a binary. Defaults to `true`.
 
   ## Examples
 
