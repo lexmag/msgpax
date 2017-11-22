@@ -219,22 +219,30 @@ defmodule MsgpaxTest do
     assert Msgpax.pack!(%UserDerivingStructField{name: "Juri"}) == expected
   end
 
-  test "timestamp" do
-    {_, date, _} =DateTime.from_iso8601("0001-01-01T00:00:00Z")
-    bin = Msgpax.pack!(date, iodata: false)
-    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
+  test "timestamp ext" do
+    string =
+      if Version.match?(System.version(), "<= 1.5.1") do
+        "0001-01-01T00:00:00.000000Z"
+      else
+        "0001-01-01T00:00:00.000001Z"
+      end
+    {:ok, datetime, 0} = DateTime.from_iso8601(string)
+    assert_format datetime, []
 
-    {_, date, _} =DateTime.from_iso8601("1970-01-01T00:00:00Z")
-    bin = Msgpax.pack!(date, iodata: false)
-    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
-    
-    date = DateTime.utc_now
-    bin = Msgpax.pack!(date, iodata: false)
-    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
-    
-    {_, date, _} =DateTime.from_iso8601("9999-12-31T23:59:59Z")
-    bin = Msgpax.pack!(date, iodata: false)
-    assert DateTime.compare(date, Msgpax.unpack!(bin)) == :eq
+    {:ok, datetime, 0} = DateTime.from_iso8601("1970-01-01T00:00:00Z")
+    assert_format datetime, []
+
+    datetime = DateTime.utc_now()
+    assert_format datetime, []
+
+    string =
+      if Version.match?(System.version(), "<= 1.5.2") do
+        "9999-12-31T23:59:59.0000000Z"
+      else
+        "9999-12-31T23:59:59.9999999Z"
+      end
+    {:ok, datetime, 0} = DateTime.from_iso8601(string)
+    assert_format datetime, []
   end
 
   defp build_string(length) do

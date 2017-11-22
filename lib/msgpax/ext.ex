@@ -78,7 +78,7 @@ defmodule Msgpax.Ext do
   @doc """
   Creates a new `Msgpax.Ext` struct.
 
-  `type` must be an integer in `0..127` and it will be used as the type of the
+  `type` must be an integer in `-128..127` and it will be used as the type of the
   extension (whose meaning depends on your application). `data` must be a binary
   containing the serialized extension (whose serialization depends on your
   application).
