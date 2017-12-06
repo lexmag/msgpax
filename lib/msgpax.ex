@@ -8,22 +8,23 @@ defmodule Msgpax do
   The following table shows how Elixir types are serialized to MessagePack types
   and how MessagePack types are de-serialized back to Elixir types.
 
-  Elixir                         | MessagePack   | Elixir
-  ------------------------------ | ------------- | -------------
-  `nil`                          | nil           | `nil`
-  `true`                         | boolean       | `true`
-  `false`                        | boolean       | `false`
-  `-1`                           | integer       | `-1`
-  `1.25`                         | float         | `1.25`
-  `:ok`                          | string        | `"ok"`
-  `Atom`                         | string        | `"Elixir.Atom"`
-  `"str"`                        | string        | `"str"`
-  `"\xFF\xFF"`                   | string        | `"\xFF\xFF"`
-  `#Msgpax.Bin<"\xFF">`          | binary        | `"\xFF"`
-  `%{foo: "bar"}`                | map           | `%{"foo" => "bar"}`
-  `[foo: "bar"]`                 | map           | `%{"foo" => "bar"}`
-  `[1, true]`                    | array         | `[1, true]`
-  `#Msgpax.Ext<4, "02:12">`      | extension     | `#Msgpax.Ext<4, "02:12">`
+  Elixir                            | MessagePack   | Elixir
+  --------------------------------- | ------------- | -------------
+  `nil`                             | nil           | `nil`
+  `true`                            | boolean       | `true`
+  `false`                           | boolean       | `false`
+  `-1`                              | integer       | `-1`
+  `1.25`                            | float         | `1.25`
+  `:ok`                             | string        | `"ok"`
+  `Atom`                            | string        | `"Elixir.Atom"`
+  `"str"`                           | string        | `"str"`
+  `"\xFF\xFF"`                      | string        | `"\xFF\xFF"`
+  `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`
+  `%{foo: "bar"}`                   | map           | `%{"foo" => "bar"}`
+  `[foo: "bar"]`                    | map           | `%{"foo" => "bar"}`
+  `[1, true]`                       | array         | `[1, true]`
+  `#Msgpax.Ext<4, "02:12">`         | extension     | `#Msgpax.Ext<4, "02:12">`
+  `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
   """
 
