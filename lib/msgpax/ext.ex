@@ -66,8 +66,7 @@ defmodule Msgpax.Ext do
 
   """
 
-  @type type :: -128..127
-
+  @type type :: 0..127
   @type t :: %__MODULE__{
     type: type,
     data: binary,
@@ -78,7 +77,7 @@ defmodule Msgpax.Ext do
   @doc """
   Creates a new `Msgpax.Ext` struct.
 
-  `type` must be an integer in `-128..127` and it will be used as the type of the
+  `type` must be an integer in `0..127` and it will be used as the type of the
   extension (whose meaning depends on your application). `data` must be a binary
   containing the serialized extension (whose serialization depends on your
   application).
@@ -90,7 +89,7 @@ defmodule Msgpax.Ext do
 
   """
   def new(type, data)
-      when type in -128..127 and is_binary(data) do
+      when type in 0..127 and is_binary(data) do
     %__MODULE__{type: type, data: data}
   end
 

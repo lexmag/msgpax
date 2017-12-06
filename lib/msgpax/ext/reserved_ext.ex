@@ -2,8 +2,8 @@ defimpl Msgpax.Packer, for: DateTime do
   use Bitwise
 
   def pack(datetime) do
-    Msgpax.Ext.new(-1, build_data(datetime))
-    |> @protocol.Msgpax.Ext.pack()
+    Msgpax.ReservedExt.new(-1, build_data(datetime))
+    |> @protocol.Msgpax.ReservedExt.pack()
   end
 
   defp build_data(datetime) do
@@ -24,13 +24,27 @@ defimpl Msgpax.Packer, for: DateTime do
   end
 end
 
-defmodule Msgpax.Ext.RsvdUnpacker do
+defmodule Msgpax.ReservedExt do
+  @moduledoc false
+
   @behaviour Msgpax.Ext.Unpacker
 
-  @min_nanoseconds -62_167_219_200_000_000_000
-  @max_nanoseconds 253_402_300_799_999_999_999
+  @nanosecond_range -62_167_219_200_000_000_000..253_402_300_799_999_999_999
 
-  def unpack(%Msgpax.Ext{type: -1, data: data}) do
+  @type type :: -128..-1
+  @type t :: %__MODULE__{
+    type: type,
+    data: binary,
+  }
+
+  defstruct [:type, :data]
+
+  def new(type, data)
+      when type in -128..-1 and is_binary(data) do
+    %__MODULE__{type: type, data: data}
+  end
+
+  def unpack(%__MODULE__{type: -1, data: data}) do
     case data do
       <<seconds::32>> ->
         DateTime.from_unix(seconds)
@@ -39,7 +53,7 @@ defmodule Msgpax.Ext.RsvdUnpacker do
         DateTime.from_unix(total_nanoseconds, :nanosecond)
       <<nanoseconds::32, seconds::64-signed>> ->
         total_nanoseconds = (seconds * 1_000_000_000 + nanoseconds)
-        if total_nanoseconds in @min_nanoseconds..@max_nanoseconds do
+        if total_nanoseconds in @nanosecond_range do
           DateTime.from_unix(total_nanoseconds, :nanosecond)
         else
           :error
@@ -49,7 +63,7 @@ defmodule Msgpax.Ext.RsvdUnpacker do
     end
   end
 
-  def unpack(%Msgpax.Ext{type: type, data: _}) do
-    throw({:not_supported_reserved_ext, type})
+  def unpack(%__MODULE__{} = struct) do
+    {:ok, struct}
   end
 end

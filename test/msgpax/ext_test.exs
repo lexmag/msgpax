@@ -91,7 +91,7 @@ defmodule Msgpax.ExtTest do
   end
 
   test "not supported reserved ext type" do
-    assert {:error, %UnpackError{reason: reason}} = Msgpax.unpack(<<0xD4, -5, 65>>)
-    assert reason == {:not_supported_reserved_ext, -5}
+    assert {:ok, result} = Msgpax.unpack(<<0xD4, -5, 65>>)
+    assert result == %Msgpax.ReservedExt{data: "A", type: -5}
   end
 end
