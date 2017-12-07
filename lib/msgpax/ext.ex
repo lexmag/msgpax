@@ -67,7 +67,6 @@ defmodule Msgpax.Ext do
   """
 
   @type type :: 0..127
-
   @type t :: %__MODULE__{
     type: type,
     data: binary,

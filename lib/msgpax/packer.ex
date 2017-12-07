@@ -227,9 +227,9 @@ defimpl Msgpax.Packer, for: Msgpax.Bin do
   end
 end
 
-defimpl Msgpax.Packer, for: Msgpax.Ext do
-  def pack(%{type: type, data: data}) do
-    [format(data), type | data]
+defimpl Msgpax.Packer, for: [Msgpax.Ext, Msgpax.ReservedExt] do
+  def pack(%_{type: type, data: data}) do
+    [format(data), <<type>> | data]
   end
 
   defp format(data) do

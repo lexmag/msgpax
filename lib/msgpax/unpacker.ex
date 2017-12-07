@@ -7,7 +7,6 @@ defmodule Msgpax.UnpackError do
     reason: {:excess_bytes, binary} |
             {:invalid_format, integer} |
             :incomplete |
-            {:not_supported_ext, integer} |
             {:ext_unpack_failure, module, Msgpax.Ext.t},
   }
 
@@ -21,8 +20,6 @@ defmodule Msgpax.UnpackError do
         "invalid format, first byte: #{byte}"
       :incomplete ->
         "given binary is incomplete"
-      {:not_supported_ext, type} ->
-        "extension type is not supported: #{type}"
       {:ext_unpack_failure, module, struct} ->
         "module #{inspect(module)} could not unpack extension: #{inspect(struct)}"
     end
@@ -173,12 +170,15 @@ defmodule Msgpax.Unpacker do
   end
 
   defp unpack_ext(type, content, options) do
-    if type in 0..127 do
+    if type < 128 do
       type
       |> Msgpax.Ext.new(content)
       |> unpack_ext(options)
     else
-      throw({:not_supported_ext, type})
+      type
+      |> Kernel.-(256)
+      |> Msgpax.ReservedExt.new(content)
+      |> unpack_ext(%{ext: Msgpax.ReservedExt})
     end
   end
 
