@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.1.0
+
+* Added support for the Timestamp extension type.
+* Improved handling of reserved extension types—unpacking will not fail for reserved extension types added in future.
+
 ## v2.0.0
 
 * Optimized unpacking by using single match context.
