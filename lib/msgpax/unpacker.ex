@@ -141,23 +141,23 @@ defmodule Msgpax.Unpacker do
   defp unpack_continue(rest, result, options, outer, index, count) do
     case index + 1 do
       ^count ->
-        unpack_continue(rest, options, outer, result, count)
+        unpack_continue(rest, result, options, outer, count)
       index ->
         unpack(rest, result, options, outer, index, count)
     end
   end
 
-  defp unpack_continue(<<buffer::bits>>, options, [kind, index, length | outer], result, count) do
+  defp unpack_continue(<<buffer::bits>>, result, options, [kind, index, length | outer], count) do
     result = build_collection(result, count, kind)
     case index + 1 do
       ^length ->
-        unpack_continue(buffer, options, outer, result, length)
+        unpack_continue(buffer, result, options, outer, length)
       index ->
         unpack(buffer, result, options, outer, index, length)
     end
   end
 
-  defp unpack_continue(<<buffer::bits>>, _options, [], [value], 1) do
+  defp unpack_continue(<<buffer::bits>>, [value], _options, [], 1) do
     {value, buffer}
   end
 
