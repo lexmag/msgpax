@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.1.1
+
+* Made unpacking even slightly more optimized.
+
 ## v2.1.0
 
 * Added support for the Timestamp extension type.
