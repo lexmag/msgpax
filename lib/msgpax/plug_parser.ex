@@ -35,6 +35,10 @@ if Code.ensure_compiled?(Plug) do
       {:next, conn}
     end
 
+    def init(opts) do
+      opts
+    end
+
     defp unpack_body(body) do
       case Msgpax.unpack!(body) do
         data when is_map(data) -> data
