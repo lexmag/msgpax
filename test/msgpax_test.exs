@@ -227,22 +227,22 @@ defmodule MsgpaxTest do
         "0001-01-01T00:00:00.000001Z"
       end
     {:ok, datetime, 0} = DateTime.from_iso8601(string)
-    assert_format datetime, []
+    assert_format datetime, [], "0001-01-01 00:00:00.000001Z"
 
     {:ok, datetime, 0} = DateTime.from_iso8601("1970-01-01T00:00:00Z")
-    assert_format datetime, []
+    assert_format datetime, [], "1970-01-01 00:00:00Z"
 
     datetime = DateTime.utc_now()
-    assert_format datetime, []
+    assert_format datetime, [], DateTime.to_string(datetime)
 
     string =
       if Version.match?(System.version(), "<= 1.5.2") do
-        "9999-12-31T23:59:59.0000000Z"
+        "9999-12-31T23:59:59.000000Z"
       else
-        "9999-12-31T23:59:59.9999999Z"
+        "9999-12-31T23:59:59.999999Z"
       end
     {:ok, datetime, 0} = DateTime.from_iso8601(string)
-    assert_format datetime, []
+    assert_format datetime, [], String.replace(string, "T", " ")
   end
 
   defp build_string(length) do

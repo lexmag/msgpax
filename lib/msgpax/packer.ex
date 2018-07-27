@@ -249,6 +249,14 @@ defimpl Msgpax.Packer, for: [Msgpax.Ext, Msgpax.ReservedExt] do
   end
 end
 
+defimpl Msgpax.Packer, for: [Date, DateTime, NaiveDateTime] do
+  def pack(%module{} = value) do
+    value
+    |> module.to_string()
+    |> @protocol.BitString.pack()
+  end
+end
+
 defimpl Msgpax.Packer, for: Any do
   defmacro __deriving__(module, struct, options) do
     deriving(module, struct, options)
