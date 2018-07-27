@@ -227,7 +227,7 @@ defmodule MsgpaxTest do
         "0001-01-01T00:00:00.000001Z"
       end
     {:ok, datetime, 0} = DateTime.from_iso8601(string)
-    assert_format datetime, [], "0001-01-01 00:00:00.000001Z"
+    assert_format datetime, [], String.replace(string, "T", " ")
 
     {:ok, datetime, 0} = DateTime.from_iso8601("1970-01-01T00:00:00Z")
     assert_format datetime, [], "1970-01-01 00:00:00Z"
