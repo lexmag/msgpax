@@ -11,8 +11,9 @@ defimpl Msgpax.Packer, for: DateTime do
     seconds = Integer.floor_div(total_nanoseconds, 1_000_000_000)
     nanoseconds = Integer.mod(total_nanoseconds, 1_000_000_000)
 
-    if (seconds >>> 34) == 0 do
+    if seconds >>> 34 == 0 do
       content = nanoseconds <<< 34 ||| seconds
+
       if (content &&& 0xFFFFFFFF00000000) == 0 do
         <<content::32>>
       else
@@ -33,9 +34,9 @@ defmodule Msgpax.ReservedExt do
 
   @type type :: -128..-1
   @type t :: %__MODULE__{
-    type: type,
-    data: binary,
-  }
+          type: type,
+          data: binary
+        }
 
   defstruct [:type, :data]
 
@@ -48,16 +49,20 @@ defmodule Msgpax.ReservedExt do
     case data do
       <<seconds::32>> ->
         DateTime.from_unix(seconds)
+
       <<nanoseconds::30, seconds::34>> ->
         total_nanoseconds = seconds * 1_000_000_000 + nanoseconds
         DateTime.from_unix(total_nanoseconds, :nanosecond)
+
       <<nanoseconds::32, seconds::64-signed>> ->
-        total_nanoseconds = (seconds * 1_000_000_000 + nanoseconds)
+        total_nanoseconds = seconds * 1_000_000_000 + nanoseconds
+
         if total_nanoseconds in @nanosecond_range do
           DateTime.from_unix(total_nanoseconds, :nanosecond)
         else
           :error
         end
+
       _ ->
         :error
     end

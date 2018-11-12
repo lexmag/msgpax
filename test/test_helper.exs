@@ -24,7 +24,7 @@ defmodule Msgpax.Case do
   defp round_trip(input, format, output, options) do
     quote do
       assert {:ok, packed} = Msgpax.pack(unquote(input))
-      assert <<unquote_splicing(format), _::bytes>> = IO.iodata_to_binary(packed)
+      assert <<unquote(format), _::bytes>> = IO.iodata_to_binary(packed)
       assert {:ok, unpacked} = Msgpax.unpack(packed, unquote(options))
       assert unpacked == unquote(output)
     end

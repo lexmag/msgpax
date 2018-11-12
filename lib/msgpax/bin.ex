@@ -12,8 +12,8 @@ defmodule Msgpax.Bin do
   """
 
   @type t :: %__MODULE__{
-    data: binary,
-  }
+          data: binary
+        }
 
   defstruct [:data]
 
@@ -34,7 +34,7 @@ defmodule Msgpax.Bin do
     import Inspect.Algebra
 
     def inspect(%{data: data}, opts) do
-      concat ["#Msgpax.Bin<", Inspect.BitString.inspect(data, opts), ">"]
+      concat(["#Msgpax.Bin<", Inspect.BitString.inspect(data, opts), ">"])
     end
   end
 end

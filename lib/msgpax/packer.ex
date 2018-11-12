@@ -17,8 +17,8 @@ defmodule Msgpax.PackError do
   """
 
   @type t :: %__MODULE__{
-    reason: {:too_big, any} | {:not_encodable, any},
-  }
+          reason: {:too_big, any} | {:not_encodable, any}
+        }
 
   defexception [:reason]
 
@@ -26,6 +26,7 @@ defmodule Msgpax.PackError do
     case exception.reason do
       {:too_big, term} ->
         "value is too big: #{inspect(term)}"
+
       {:not_encodable, term} ->
         "value is not encodable: #{inspect(term)}"
     end
@@ -108,6 +109,7 @@ defimpl Msgpax.Packer, for: Atom do
   def pack(nil), do: [0xC0]
   def pack(false), do: [0xC2]
   def pack(true), do: [0xC3]
+
   def pack(atom) do
     atom
     |> Atom.to_string()
@@ -126,12 +128,12 @@ defimpl Msgpax.Packer, for: BitString do
 
   defp format(binary) do
     size = byte_size(binary)
+
     cond do
       size < 32 -> 0b10100000 + size
       size < 256 -> [0xD9, size]
       size < 0x10000 -> <<0xDA, size::16>>
       size < 0x100000000 -> <<0xDB, size::32>>
-
       true -> throw({:too_big, binary})
     end
   end
@@ -150,11 +152,11 @@ defimpl Msgpax.Packer, for: Map do
 
   defp format(map) do
     length = map_size(map)
+
     cond do
       length < 16 -> 0b10000000 + length
       length < 0x10000 -> <<0xDE, length::16>>
       length < 0x100000000 -> <<0xDF, length::32>>
-
       true -> throw({:too_big, map})
     end
   end
@@ -169,11 +171,11 @@ defimpl Msgpax.Packer, for: List do
 
   defp format(list) do
     length = length(list)
+
     cond do
       length < 16 -> 0b10010000 + length
       length < 0x10000 -> <<0xDC, length::16>>
       length < 0x100000000 -> <<0xDD, length::32>>
-
       true -> throw({:too_big, list})
     end
   end
@@ -193,7 +195,6 @@ defimpl Msgpax.Packer, for: Integer do
       int >= -0x8000 -> <<0xD1, int::16>>
       int >= -0x80000000 -> <<0xD2, int::32>>
       int >= -0x8000000000000000 -> <<0xD3, int::64>>
-
       true -> throw({:too_big, int})
     end
   end
@@ -205,23 +206,21 @@ defimpl Msgpax.Packer, for: Integer do
       int < 0x10000 -> <<0xCD, int::16>>
       int < 0x100000000 -> <<0xCE, int::32>>
       int < 0x10000000000000000 -> <<0xCF, int::64>>
-
       true -> throw({:too_big, int})
     end
   end
 end
 
 defimpl Msgpax.Packer, for: Msgpax.Bin do
-  def pack(%{data: data}) when is_binary(data),
-    do: [format(data) | data]
+  def pack(%{data: data}) when is_binary(data), do: [format(data) | data]
 
   defp format(binary) do
     size = byte_size(binary)
+
     cond do
       size < 256 -> [0xC4, size]
       size < 0x10000 -> <<0xC5, size::16>>
       size < 0x100000000 -> <<0xC6, size::32>>
-
       true -> throw({:too_big, binary})
     end
   end
@@ -234,6 +233,7 @@ defimpl Msgpax.Packer, for: [Msgpax.Ext, Msgpax.ReservedExt] do
 
   defp format(data) do
     size = byte_size(data)
+
     cond do
       size == 1 -> [0xD4]
       size == 2 -> [0xD5]
@@ -243,7 +243,6 @@ defimpl Msgpax.Packer, for: [Msgpax.Ext, Msgpax.ReservedExt] do
       size < 256 -> [0xC7, size]
       size < 0x10000 -> <<0xC8, size::16>>
       size < 0x100000000 -> <<0xC9, size::32>>
-
       true -> throw({:too_big, data})
     end
   end
@@ -259,14 +258,18 @@ defimpl Msgpax.Packer, for: Any do
     fields = Keyword.get(options, :fields, keys)
     include_struct_field? = Keyword.get(options, :include_struct_field, :__struct__ in fields)
     fields = List.delete(fields, :__struct__)
+
     extractor =
       cond do
         fields == keys and include_struct_field? ->
           quote(do: Map.from_struct(struct) |> Map.put("__struct__", unquote(module)))
+
         fields == keys ->
           quote(do: Map.from_struct(struct))
+
         include_struct_field? ->
           quote(do: Map.take(struct, unquote(fields)) |> Map.put("__struct__", unquote(module)))
+
         true ->
           quote(do: Map.take(struct, unquote(fields)))
       end
@@ -275,14 +278,13 @@ defimpl Msgpax.Packer, for: Any do
       defimpl unquote(@protocol), for: unquote(module) do
         def pack(struct) do
           unquote(extractor)
-          |> @protocol.Map.pack
+          |> @protocol.Map.pack()
         end
       end
     end
   end
 
   def pack(term) do
-    raise Protocol.UndefinedError,
-      protocol: @protocol, value: term
+    raise Protocol.UndefinedError, protocol: @protocol, value: term
   end
 end

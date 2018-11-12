@@ -22,8 +22,11 @@ defmodule Msgpax.Ext do
   integer to identify the type of this extension).
 
       defimpl Msgpax.Packer, for: RepByte do
+        @rep_byte_ext_type 10
+
         def pack(%RepByte{data: b, reps: reps}) do
-          Msgpax.Ext.new(10, String.duplicate(<<b>>, reps))
+          @rep_byte_ext_type
+          |> Msgpax.Ext.new(String.duplicate(<<b>>, reps))
           |> Msgpax.Packer.pack()
         end
       end
@@ -68,9 +71,9 @@ defmodule Msgpax.Ext do
 
   @type type :: 0..127
   @type t :: %__MODULE__{
-    type: type,
-    data: binary,
-  }
+          type: type,
+          data: binary
+        }
 
   defstruct [:type, :data]
 
@@ -97,9 +100,13 @@ defmodule Msgpax.Ext do
     import Inspect.Algebra
 
     def inspect(%{type: type, data: data}, opts) do
-      concat ["#Msgpax.Ext<",
-        Inspect.Integer.inspect(type, opts), ", ",
-        Inspect.BitString.inspect(data, opts), ">"]
+      concat([
+        "#Msgpax.Ext<",
+        Inspect.Integer.inspect(type, opts),
+        ", ",
+        Inspect.BitString.inspect(data, opts),
+        ">"
+      ])
     end
   end
 end

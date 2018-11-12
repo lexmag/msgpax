@@ -62,7 +62,7 @@ defmodule Msgpax do
       {:ok, <<163, 102, 111, 111>>}
 
   """
-  @spec pack(term, Keyword.t) :: {:ok, iodata} | {:error, Msgpax.PackError.t}
+  @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t()}
   def pack(term, options \\ []) when is_list(options) do
     iodata? = Keyword.get(options, :iodata, true)
 
@@ -74,6 +74,7 @@ defmodule Msgpax do
     else
       iodata when iodata? ->
         {:ok, iodata}
+
       iodata ->
         {:ok, IO.iodata_to_binary(iodata)}
     end
@@ -102,11 +103,12 @@ defmodule Msgpax do
       <<163, 102, 111, 111>>
 
   """
-  @spec pack!(term, Keyword.t) :: iodata | no_return
+  @spec pack!(term, Keyword.t()) :: iodata | no_return
   def pack!(term, options \\ []) do
     case pack(term, options) do
       {:ok, result} ->
         result
+
       {:error, exception} ->
         raise exception
     end
@@ -133,7 +135,7 @@ defmodule Msgpax do
       {:error, %Msgpax.UnpackError{reason: {:invalid_format, 163}}}
 
   """
-  @spec unpack_slice(iodata, Keyword.t) :: {:ok, any, binary} | {:error, Msgpax.UnpackError.t}
+  @spec unpack_slice(iodata, Keyword.t()) :: {:ok, any, binary} | {:error, Msgpax.UnpackError.t()}
   def unpack_slice(iodata, options \\ []) when is_list(options) do
     try do
       iodata
@@ -164,11 +166,12 @@ defmodule Msgpax do
       ** (Msgpax.UnpackError) invalid format, first byte: 163
 
   """
-  @spec unpack_slice!(iodata, Keyword.t) :: {any, binary} | no_return
+  @spec unpack_slice!(iodata, Keyword.t()) :: {any, binary} | no_return
   def unpack_slice!(iodata, options \\ []) do
     case unpack_slice(iodata, options) do
       {:ok, value, rest} ->
         {value, rest}
+
       {:error, exception} ->
         raise exception
     end
@@ -205,13 +208,15 @@ defmodule Msgpax do
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
-  @spec unpack(iodata, Keyword.t) :: {:ok, any} | {:error, Msgpax.UnpackError.t}
+  @spec unpack(iodata, Keyword.t()) :: {:ok, any} | {:error, Msgpax.UnpackError.t()}
   def unpack(iodata, options \\ []) do
     case unpack_slice(iodata, options) do
       {:ok, value, <<>>} ->
         {:ok, value}
+
       {:ok, _, bytes} ->
         {:error, %Msgpax.UnpackError{reason: {:excess_bytes, bytes}}}
+
       {:error, _} = error ->
         error
     end
@@ -237,11 +242,12 @@ defmodule Msgpax do
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
-  @spec unpack!(iodata, Keyword.t) :: any | no_return
+  @spec unpack!(iodata, Keyword.t()) :: any | no_return
   def unpack!(iodata, options \\ []) do
     case unpack(iodata, options) do
       {:ok, value} ->
         value
+
       {:error, exception} ->
         raise exception
     end

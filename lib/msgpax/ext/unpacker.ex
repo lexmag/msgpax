@@ -15,5 +15,5 @@ defmodule Msgpax.Ext.Unpacker do
   It should return `{:ok, value}` to have Msgpax return `value` when unpacking
   the given extension, or `:error` if there's an error while unpacking.
   """
-  @callback unpack(ext :: Msgpax.Ext.t | Msgpax.ReservedExt.t) :: {:ok, any} | :error
+  @callback unpack(ext :: Msgpax.Ext.t() | Msgpax.ReservedExt.t()) :: {:ok, any} | :error
 end

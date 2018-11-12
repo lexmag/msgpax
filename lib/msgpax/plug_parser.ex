@@ -26,6 +26,7 @@ if Code.ensure_compiled?(Plug) do
       case read_body(conn, opts) do
         {:ok, body, conn} ->
           {:ok, unpack_body(body), conn}
+
         {:more, _partial_body, conn} ->
           {:error, :too_large, conn}
       end
