@@ -35,9 +35,7 @@ if Code.ensure_compiled?(Plug) do
       {:next, conn}
     end
 
-    def init(opts) do
-      opts
-    end
+    def init(opts), do: opts
 
     defp unpack_body(body) do
       case Msgpax.unpack!(body) do
