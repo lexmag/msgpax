@@ -22,10 +22,15 @@ if Code.ensure_compiled?(Plug) do
 
     import Plug.Conn
 
-    def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, opts) do
-      case read_body(conn, opts) do
+    def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, options) do
+      {msgpax_options, options} = Keyword.pop(options, :msgpax, [])
+
+      case read_body(conn, options) do
+        {:ok, <<>>, conn} ->
+          {:next, conn}
+
         {:ok, body, conn} ->
-          {:ok, unpack_body(body), conn}
+          {:ok, unpack_body(body, msgpax_options), conn}
 
         {:more, _partial_body, conn} ->
           {:error, :too_large, conn}
@@ -36,10 +41,10 @@ if Code.ensure_compiled?(Plug) do
       {:next, conn}
     end
 
-    def init(opts), do: opts
+    def init(options), do: options
 
-    defp unpack_body(body) do
-      case Msgpax.unpack!(body) do
+    defp unpack_body(body, options) do
+      case Msgpax.unpack!(body, options) do
         data when is_map(data) -> data
         data -> %{"_msgpack" => data}
       end
