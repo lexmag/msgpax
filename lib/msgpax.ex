@@ -136,7 +136,9 @@ defmodule Msgpax do
 
   """
   @spec unpack_slice(iodata, Keyword.t()) :: {:ok, any, binary} | {:error, Msgpax.UnpackError.t()}
-  def unpack_slice(iodata, options \\ []) when is_list(options) do
+  def unpack_slice(iodata, options \\ [])
+
+  def unpack_slice(iodata, options) when is_list(options) and (is_list(iodata) or is_binary(iodata)) do
     try do
       iodata
       |> IO.iodata_to_binary()
@@ -148,6 +150,10 @@ defmodule Msgpax do
       {value, rest} ->
         {:ok, value, rest}
     end
+  end
+
+  def unpack_slice(_iodata, _options) do
+    {:error, %Msgpax.UnpackError{reason: :incomplete}}
   end
 
   @doc """
