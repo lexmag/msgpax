@@ -190,7 +190,7 @@ defmodule Msgpax do
   `{:ok, term}` if the de-serialization is successful, `{:error, exception}`
   otherwise, where `exception` is a `Msgpax.UnpackError` struct which can be
   raised or converted to a more human-friendly error message with
-  `Exception.message/1`. See `Msgpax.UnpackError` for all the possible reasons
+  `Exception.message/1`. See `Msgpax.UnpackError` for all possible reasons
   for an unpacking error.
 
   ## Options
