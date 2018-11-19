@@ -200,12 +200,10 @@ defmodule MsgpaxTest do
 
   test "incomplete binary" do
     assert Msgpax.unpack(<<147, 1, 2>>) == {:error, %UnpackError{reason: :incomplete}}
-    assert Msgpax.unpack(<<5::3>>) == {:error, %UnpackError{reason: :incomplete}}
   end
 
   test "unpack_slice/1" do
     assert Msgpax.unpack_slice(<<255, 1>>) == {:ok, -1, <<1>>}
-    assert Msgpax.unpack_slice(<<5::3>>) == {:error, %UnpackError{reason: :incomplete}}
   end
 
   test "deriving" do
