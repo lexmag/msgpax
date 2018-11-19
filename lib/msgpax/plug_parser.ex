@@ -22,9 +22,7 @@ if Code.ensure_compiled?(Plug) do
 
     import Plug.Conn
 
-    def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, options) do
-      {msgpax_options, options} = Keyword.pop(options, :msgpax, [])
-
+    def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, {msgpax_options, options}) do
       case read_body(conn, options) do
         {:ok, <<>>, conn} ->
           {:next, conn}
@@ -41,7 +39,9 @@ if Code.ensure_compiled?(Plug) do
       {:next, conn}
     end
 
-    def init(options), do: options
+    def init(options) do
+      Keyword.pop(options, :msgpax, [])
+    end
 
     defp unpack_body(body, options) do
       case Msgpax.unpack!(body, options) do
