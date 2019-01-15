@@ -16,7 +16,8 @@ if Code.ensure_compiled?(Plug) do
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"]
 
-          # Alternatively
+          # Alternatively, use "unpacker" option which accepts an MFA, to
+          # configure how unpacking should be done.
           plug Plug.Parsers,
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"],
