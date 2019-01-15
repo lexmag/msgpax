@@ -23,7 +23,6 @@ defmodule Msgpax.PlugParserTest do
   end
 
   test "accepts a module for options" do
-    binary = Msgpax.Bin.new("hello world")
     conn = conn(:post, "/", Msgpax.pack!(100) |> IO.iodata_to_binary())
 
     assert {:ok, unpacked, _conn} = parse(conn, [unpacker: Msgpax])
