@@ -7,6 +7,10 @@ if Code.ensure_compiled?(Plug) do
     `Plug.Parsers`](http://hexdocs.pm/plug/Plug.Parsers.html) for more
     information on how to use `Plug.Parsers`.
 
+    This parser accepts `unpacker` option as an MFA, to configure how
+    unpacking should be done. Note that the response body will be prepended
+    to the arguments part of the MFA.
+
     ## Examples
 
         defmodule MyPlugPipeline do
@@ -16,12 +20,11 @@ if Code.ensure_compiled?(Plug) do
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"]
 
-          # Alternatively, use "unpacker" option which accepts an MFA, to
-          # configure how unpacking should be done.
+          # Or use "unpacker" option.
           plug Plug.Parsers,
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"],
-               unpacker: {Msgpax, :unpack!, [binary: true, ...]}
+               unpacker: {Msgpax, :unpack!, [[binary: true, ...]]}
 
           # rest of the pipeline
         end
