@@ -32,6 +32,6 @@ defmodule Msgpax.PlugParserTest do
   test "empty body" do
     conn = conn(:post, "/", "")
 
-    assert {:next, _conn} = Msgpax.PlugParser.parse(conn, "application", "msgpack", [], [])
+    assert {:ok, %{}, _conn} = Msgpax.PlugParser.parse(conn, "application", "msgpack", [], [])
   end
 end
