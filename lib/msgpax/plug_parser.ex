@@ -25,7 +25,7 @@ if Code.ensure_compiled?(Plug) do
     def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, opts) do
       case read_body(conn, opts) do
         {:ok, <<>>, conn} ->
-          {:next, conn}
+          {:ok, %{}, conn}
 
         {:ok, body, conn} ->
           {:ok, unpack_body(body), conn}
