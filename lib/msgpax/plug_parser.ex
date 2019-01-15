@@ -7,9 +7,9 @@ if Code.ensure_compiled?(Plug) do
     `Plug.Parsers`](http://hexdocs.pm/plug/Plug.Parsers.html) for more
     information on how to use `Plug.Parsers`.
 
-    This parser accepts `unpacker` option as an MFA, to configure how
-    unpacking should be done. Note that the response body will be prepended
-    to the arguments part of the MFA.
+    This parser accepts `unpacker` option as a module, function, and arguments
+    tuple, to configure how unpacking should be done. Note that the response
+    body will be prepended to the arguments of the tuple before applying.
 
     ## Examples
 
