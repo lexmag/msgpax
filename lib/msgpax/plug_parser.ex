@@ -37,9 +37,6 @@ if Code.ensure_compiled?(Plug) do
 
     def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, {unpacker, options}) do
       case read_body(conn, options) do
-        {:ok, <<>>, conn} ->
-          {:next, conn}
-
         {:ok, body, conn} ->
           {:ok, unpack_body(body, unpacker), conn}
 
