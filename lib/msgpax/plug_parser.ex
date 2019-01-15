@@ -12,7 +12,16 @@ if Code.ensure_compiled?(Plug) do
         defmodule MyPlugPipeline do
           use Plug.Builder
 
-          plug Plug.Parsers, parsers: [Msgpax.PlugParser], pass: ["application/msgpack"]
+          plug Plug.Parsers,
+               parsers: [Msgpax.PlugParser],
+               pass: ["application/msgpack"]
+
+          # Alternatively
+          plug Plug.Parsers,
+               parsers: [Msgpax.PlugParser],
+               pass: ["application/msgpack"],
+               unpacker: {Msgpax, :unpack!, [binary: true, ...]}
+
           # rest of the pipeline
         end
 
