@@ -22,13 +22,13 @@ if Code.ensure_compiled?(Plug) do
 
     import Plug.Conn
 
-    def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, {msgpax_options, options}) do
+    def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, {unpacker, options}) do
       case read_body(conn, options) do
         {:ok, <<>>, conn} ->
           {:next, conn}
 
         {:ok, body, conn} ->
-          {:ok, unpack_body(body, msgpax_options), conn}
+          {:ok, unpack_body(body, unpacker), conn}
 
         {:more, _partial_body, conn} ->
           {:error, :too_large, conn}
@@ -40,17 +40,25 @@ if Code.ensure_compiled?(Plug) do
     end
 
     def init(options) do
-      Keyword.pop(options, :msgpax, [])
+      Keyword.pop(options, :unpacker, Msgpax)
     end
 
-    defp unpack_body(body, options) do
-      case Msgpax.unpack!(body, options) do
+    defp unpack_body(body, unpacker) do
+      case apply_mfa_or_module(body, unpacker) do
         data when is_map(data) -> data
         data -> %{"_msgpack" => data}
       end
     rescue
-      exception in [Msgpax.UnpackError] ->
+      exception ->
         raise Plug.Parsers.ParseError, exception: exception
+    end
+
+    defp apply_mfa_or_module(body, unpacker) when is_atom(unpacker) do
+      unpacker.unpack!(body)
+    end
+
+    defp apply_mfa_or_module(body, {module_name, function_name, extra_args}) do
+      apply(module_name, function_name, [body | extra_args])
     end
   end
 end

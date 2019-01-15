@@ -14,11 +14,20 @@ defmodule Msgpax.PlugParserTest do
     assert {:ok, %{"_msgpack" => 100}, _conn} = parse(conn, [])
   end
 
-  test "accepts options for Msgpax" do
+  test "accepts an MFA for options" do
     binary = Msgpax.Bin.new("hello world")
     conn = conn(:post, "/", Msgpax.pack!(binary) |> IO.iodata_to_binary())
 
-    assert {:ok, ^binary, _conn} = parse(conn, [msgpax: [binary: true]])
+    assert {:ok, unpacked, _conn} = parse(conn, [unpacker: {Msgpax, :unpack!, [[binary: true]]}])
+    assert unpacked == binary
+  end
+
+  test "accepts a module for options" do
+    binary = Msgpax.Bin.new("hello world")
+    conn = conn(:post, "/", Msgpax.pack!(100) |> IO.iodata_to_binary())
+
+    assert {:ok, unpacked, _conn} = parse(conn, [unpacker: Msgpax])
+    assert {:ok, %{"_msgpack" => 100}, _conn} = parse(conn, [])
   end
 
   test "request with a content-type other than application/msgpack" do
