@@ -20,13 +20,13 @@ if Code.ensure_compiled?(Plug) do
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"]
 
-          # Or use :unpacker option.
+          # Or use the :unpacker option.
           plug Plug.Parsers,
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"],
                unpacker: {Msgpax, :unpack!, [[binary: true, ...]]}
 
-          # rest of the pipeline
+          # ... rest of the pipeline
         end
 
     """
@@ -70,12 +70,12 @@ if Code.ensure_compiled?(Plug) do
         raise Plug.Parsers.ParseError, exception: exception
     end
 
-    defp apply_mfa_or_module(body, unpacker) when is_atom(unpacker) do
-      unpacker.unpack!(body)
-    end
-
     defp apply_mfa_or_module(body, {module_name, function_name, extra_args}) do
       apply(module_name, function_name, [body | extra_args])
+    end
+
+    defp apply_mfa_or_module(body, unpacker) do
+      unpacker.unpack!(body)
     end
 
     defp validate_unpacker!({module, fun, args})
