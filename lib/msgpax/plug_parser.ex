@@ -46,7 +46,7 @@ if Code.ensure_compiled?(Plug) do
       end
     end
 
-    def parse(%Plug.Conn{} = conn, _type, _subtype, _headers, _opts) do
+    def parse(%Plug.Conn{} = conn, _type, _subtype, _params, _opts) do
       {:next, conn}
     end
 
