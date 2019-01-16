@@ -68,22 +68,22 @@ if Code.ensure_compiled?(Plug) do
         raise Plug.Parsers.ParseError, exception: exception
     end
 
-    defp apply_mfa_or_module(body, {module_name, function_name, extra_args}) do
-      apply(module_name, function_name, [body | extra_args])
+    defp apply_mfa_or_module(body, {module, function, extra_args}) do
+      apply(module, function, [body | extra_args])
     end
 
     defp apply_mfa_or_module(body, unpacker) do
       unpacker.unpack!(body)
     end
 
-    defp validate_unpacker!({module, fun, args})
-         when is_atom(module) and is_atom(fun) and is_list(args) do
-      arity = length(args) + 1
+    defp validate_unpacker!({module, function, extra_args})
+         when is_atom(module) and is_atom(function) and is_list(extra_args) do
+      arity = length(extra_args) + 1
 
-      unless Code.ensure_compiled?(module) and function_exported?(module, fun, arity) do
+      unless Code.ensure_compiled?(module) and function_exported?(module, function, arity) do
         raise ArgumentError,
               "invalid :unpacker option. Undefined function " <>
-                Exception.format_mfa(module, fun, arity)
+                Exception.format_mfa(module, function, arity)
       end
     end
 
