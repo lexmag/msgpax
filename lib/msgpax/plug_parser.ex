@@ -25,7 +25,7 @@ if Code.ensure_compiled?(Plug) do
           plug Plug.Parsers,
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"],
-               unpacker: {Msgpax, :unpack!, [binary: true]}
+               unpacker: {Msgpax, :unpack!, [[binary: true]]}
 
           # ... rest of the pipeline
         end
