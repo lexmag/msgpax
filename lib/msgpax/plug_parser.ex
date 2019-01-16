@@ -36,7 +36,7 @@ if Code.ensure_compiled?(Plug) do
 
     import Plug.Conn
 
-    def parse(%Plug.Conn{} = conn, "application", "msgpack", _headers, {unpacker, options}) do
+    def parse(%Plug.Conn{} = conn, "application", "msgpack", _params, {unpacker, options}) do
       case read_body(conn, options) do
         {:ok, body, conn} ->
           {:ok, unpack_body(body, unpacker), conn}
