@@ -31,7 +31,9 @@ defmodule Msgpax.PlugParserTest do
 
   test "request with a content-type other than application/msgpack" do
     conn = conn(:post, "/", Msgpax.pack!(100) |> IO.iodata_to_binary())
-    assert {:next, ^conn} = Msgpax.PlugParser.parse(conn, "application", "json", [], {[], []})
+    options = Msgpax.PlugParser.init([])
+    
+    assert {:next, ^conn} = Msgpax.PlugParser.parse(conn, "application", "json", %{}, options)
   end
 
   test "bad MessagePack-encoded body" do
