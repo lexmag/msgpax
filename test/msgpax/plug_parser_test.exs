@@ -43,7 +43,7 @@ defmodule Msgpax.PlugParserTest do
   end
 
   defp parse(conn, options) do
-    state = Msgpax.PlugParser.init(options)
-    Msgpax.PlugParser.parse(conn, "application", "msgpack", [], state)
+    options = Msgpax.PlugParser.init(options)
+    Msgpax.PlugParser.parse(conn, "application", "msgpack", %{}, options)
   end
 end
