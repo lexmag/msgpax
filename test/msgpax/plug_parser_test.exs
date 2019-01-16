@@ -47,7 +47,9 @@ defmodule Msgpax.PlugParserTest do
   test "empty body" do
     conn = conn(:post, "/", "")
 
-    assert {:ok, %{}, _conn} = parse(conn, [])
+    assert_raise Plug.Parsers.ParseError, ~r/given binary is incomplete/, fn ->
+      Msgpax.PlugParser.parse(conn, "application", "msgpack", [], [])
+    end
   end
 
   defp parse(conn, options) do
