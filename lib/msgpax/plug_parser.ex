@@ -7,8 +7,9 @@ if Code.ensure_compiled?(Plug) do
     `Plug.Parsers`](http://hexdocs.pm/plug/Plug.Parsers.html) for more
     information on how to use `Plug.Parsers`.
 
-    This parser accepts `unpacker` option as a module, function, and arguments
-    tuple, to configure how unpacking should be done. Note that the response
+    This parser accepts the `:unpacker` option to configure how unpacking should be done.
+    Its value can either be a module that implements the `unpack!/1` function
+    or a module, function, and arguments tuple. Note, the response
     body will be prepended to the given list of arguments before applying.
 
     ## Examples
@@ -20,11 +21,11 @@ if Code.ensure_compiled?(Plug) do
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"]
 
-          # Or use the :unpacker option.
+          # Or use the :unpacker option:
           plug Plug.Parsers,
                parsers: [Msgpax.PlugParser],
                pass: ["application/msgpack"],
-               unpacker: {Msgpax, :unpack!, [[binary: true, ...]]}
+               unpacker: {Msgpax, :unpack!, [binary: true]}
 
           # ... rest of the pipeline
         end
