@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.0
+
+* Added the `:unpacker` option support in `Msgpax.PlugParser`.
+
 ## v2.1.1
 
 * Made unpacking even slightly more optimized.
