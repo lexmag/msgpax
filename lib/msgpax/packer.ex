@@ -145,9 +145,10 @@ defimpl Msgpax.Packer, for: Map do
   end
 
   def pack(map) do
-    for {key, value} <- map, into: [format(map)] do
-      [@protocol.pack(key) | @protocol.pack(value)]
-    end
+    [format(map)] ++
+      for {key, value} <- map do
+        [@protocol.pack(key) | @protocol.pack(value)]
+      end
   end
 
   defp format(map) do
@@ -164,9 +165,10 @@ end
 
 defimpl Msgpax.Packer, for: List do
   def pack(list) do
-    for item <- list, into: [format(list)] do
-      @protocol.pack(item)
-    end
+    [format(list)] ++
+      for item <- list do
+        @protocol.pack(item)
+      end
   end
 
   defp format(list) do
