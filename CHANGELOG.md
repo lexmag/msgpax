@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.1
+
+* Fixed deprecation warnings for using non-empty lists with the Collectable protocol.
+
 ## v2.2.0
 
 * Added the `:unpacker` option support in `Msgpax.PlugParser`.
