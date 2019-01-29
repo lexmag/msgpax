@@ -179,6 +179,12 @@ defmodule MsgpaxTest do
              {:error, %PackError{reason: {:not_encodable, <<5::3>>}}}
   end
 
+  test "undefined protocol" do
+    assert Msgpax.pack([{}]) ==
+             {:error,
+              %PackError{reason: %Protocol.UndefinedError{protocol: Msgpax.Packer, value: {}}}}
+  end
+
   test "pack!/2 with the :iodata option" do
     assert Msgpax.pack!([], iodata: true) == [144]
     assert Msgpax.pack!([], iodata: false) == <<144>>
@@ -211,7 +217,7 @@ defmodule MsgpaxTest do
   test "deriving" do
     assert Msgpax.pack!(%User{name: "Lex"}) == Msgpax.pack!(%{name: "Lex"})
 
-    assert_raise Protocol.UndefinedError, fn ->
+    assert_raise Msgpax.PackError, fn ->
       Msgpax.pack!(%URI{})
     end
 

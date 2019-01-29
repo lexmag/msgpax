@@ -71,6 +71,9 @@ defmodule Msgpax do
     catch
       :throw, reason ->
         {:error, %Msgpax.PackError{reason: reason}}
+
+      :error, %Protocol.UndefinedError{protocol: Msgpax.Packer} = e ->
+        {:error, %Msgpax.PackError{reason: e}}
     else
       iodata when iodata? ->
         {:ok, iodata}
