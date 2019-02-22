@@ -14,12 +14,20 @@ defmodule Msgpax.PlugParserTest do
     assert {:ok, %{"_msgpack" => 100}, _conn} = parse(conn, [])
   end
 
+  test "body with a MessagePack-encoded struct" do
+    {:ok, datetime, 0} = DateTime.from_iso8601("2000-01-02T03:04:05Z")
+    conn = conn(:post, "/", Msgpax.pack!(datetime, iodata: false))
+
+    assert {:ok, unpacked, _conn} = parse(conn, [])
+    assert unpacked == %{"_msgpack" => datetime}
+  end
+
   test "accepts an MFA for options" do
     binary = Msgpax.Bin.new("hello world")
     conn = conn(:post, "/", Msgpax.pack!(binary, iodata: false))
 
     assert {:ok, unpacked, _conn} = parse(conn, unpacker: {Msgpax, :unpack!, [[binary: true]]})
-    assert unpacked == binary
+    assert unpacked == %{"_msgpack" => binary}
   end
 
   test "accepts a module for options" do
