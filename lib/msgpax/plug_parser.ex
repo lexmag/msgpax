@@ -60,6 +60,7 @@ if Code.ensure_compiled?(Plug) do
 
     defp unpack_body(body, unpacker) do
       case apply_mfa_or_module(body, unpacker) do
+        data = %_{} -> %{"_msgpack" => data}
         data when is_map(data) -> data
         data -> %{"_msgpack" => data}
       end
