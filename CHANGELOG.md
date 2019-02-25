@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.2
+
+* Fixed bare struct unpacking in `Msgpax.PlugParser`—the same behaviour when unpacking maps.
+
 ## v2.2.1
 
 * Fixed deprecation warnings for using non-empty lists with the Collectable protocol.
