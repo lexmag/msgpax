@@ -34,15 +34,15 @@ defmodule Msgpax.Unpacker do
   @moduledoc false
 
   def unpack(<<buffer::bits>>, options) do
-    unpack(buffer, [], Map.new(options), [], 0, 1)
+    unpack_top_level(buffer, Map.new(options))
   end
 
-  primitives = %{
+  @primitives %{
     [quote(do: <<0xC0>>)] => quote(do: nil),
     [quote(do: <<0xC2>>)] => quote(do: false),
     [quote(do: <<0xC3>>)] => quote(do: true),
-    # Strings
     [
+      # Strings
       quote(do: <<0b101::3, length::5, value::size(length)-bytes>>),
       quote(do: <<0xD9, length::8, value::size(length)-bytes>>),
       quote(do: <<0xDA, length::16, value::size(length)-bytes>>),
@@ -64,118 +64,166 @@ defmodule Msgpax.Unpacker do
       quote(do: <<0xD3, value::64-signed>>)
     ] => quote(do: value),
     # Negative fixint
-    [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000)
+    [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000),
+    # # Binaries
+    [
+      quote(do: <<0xC4, length::8, content::size(length)-bytes>>),
+      quote(do: <<0xC5, length::16, content::size(length)-bytes>>),
+      quote(do: <<0xC6, length::32, content::size(length)-bytes>>)
+    ] => quote(do: unpack_binary(content, options)),
+    # Extensions
+    [
+      quote(do: <<0xD4, type, content::1-bytes>>),
+      quote(do: <<0xD5, type, content::2-bytes>>),
+      quote(do: <<0xD6, type, content::4-bytes>>),
+      quote(do: <<0xD7, type, content::8-bytes>>),
+      quote(do: <<0xD8, type, content::16-bytes>>),
+      quote(do: <<0xC7, length::8, type, content::size(length)-bytes>>),
+      quote(do: <<0xC8, length::16, type, content::size(length)-bytes>>),
+      quote(do: <<0xC9, length::32, type, content::size(length)-bytes>>)
+    ] => quote(do: unpack_ext(type, content, options))
   }
 
-  for {formats, value} <- primitives,
-      format <- formats do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      result = [unquote(value) | result]
-      unpack_continue(rest, result, options, outer, index, count)
-    end
-  end
+  @collection_pats %{
+    [
+      quote(do: <<0b1001::4, list_size::4>>),
+      quote(do: <<0xDC, list_size::16>>),
+      quote(do: <<0xDD, list_size::32>>)
+    ] => {:unpack_list, quote(do: list_size)},
+    [
+      quote(do: <<0b1000::4, map_size::4>>),
+      quote(do: <<0xDE, map_size::16>>),
+      quote(do: <<0xDF, map_size::32>>)
+    ] => {:unpack_map, quote(do: map_size)}
+  }
 
-  lists = [
-    quote(do: <<0b1001::4, length::4>>),
-    quote(do: <<0xDC, length::16>>),
-    quote(do: <<0xDD, length::32>>)
-  ]
-
-  for format <- lists do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      case unquote(quote(do: length)) do
-        0 ->
-          unpack_continue(rest, [[] | result], options, outer, index, count)
-
-        length ->
-          unpack(rest, result, options, [:list, index, count | outer], 0, length)
+  # Top Level
+  for {pats, value} <- @primitives do
+    for pat <- pats do
+      defp unpack_top_level(<<unquote(pat), rest::bits>>, unquote(quote(do: options))) do
+        {unquote(value), rest}
       end
     end
   end
 
-  maps = [
-    quote(do: <<0b1000::4, length::4>>),
-    quote(do: <<0xDE, length::16>>),
-    quote(do: <<0xDF, length::32>>)
-  ]
-
-  for format <- maps do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      case unquote(quote(do: length)) do
-        0 ->
-          unpack_continue(rest, [%{} | result], options, outer, index, count)
-
-        length ->
-          unpack(rest, result, options, [:map, index, count | outer], 0, length * 2)
+  for {pats, {unpack_collection, list_size}} <- @collection_pats do
+    for pat <- pats do
+      defp unpack_top_level(<<unquote(pat), rest::bits>>, options) do
+        unquote(unpack_collection)(rest, unquote(list_size), [], options)
       end
     end
   end
 
-  binaries = [
-    quote(do: <<0xC4, length::8, content::size(length)-bytes>>),
-    quote(do: <<0xC5, length::16, content::size(length)-bytes>>),
-    quote(do: <<0xC6, length::32, content::size(length)-bytes>>)
-  ]
-
-  for format <- binaries do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      value = unpack_binary(unquote(quote(do: content)), options)
-      unpack_continue(rest, [value | result], options, outer, index, count)
-    end
-  end
-
-  extensions = [
-    quote(do: <<0xD4, type, content::1-bytes>>),
-    quote(do: <<0xD5, type, content::2-bytes>>),
-    quote(do: <<0xD6, type, content::4-bytes>>),
-    quote(do: <<0xD7, type, content::8-bytes>>),
-    quote(do: <<0xD8, type, content::16-bytes>>),
-    quote(do: <<0xC7, length::8, type, content::size(length)-bytes>>),
-    quote(do: <<0xC8, length::16, type, content::size(length)-bytes>>),
-    quote(do: <<0xC9, length::32, type, content::size(length)-bytes>>)
-  ]
-
-  for format <- extensions do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      value = unpack_ext(unquote(quote(do: type)), unquote(quote(do: content)), options)
-      unpack_continue(rest, [value | result], options, outer, index, count)
-    end
-  end
-
-  defp unpack(<<byte, _::bits>>, _result, _options, _outer, _index, _count) do
+  defp unpack_top_level(<<byte, _::bits>>, _options) do
     throw({:invalid_format, byte})
   end
 
-  defp unpack(<<_::bits>>, _result, _options, _outer, _index, _count) do
+  defp unpack_top_level(<<_::bits>>, _options) do
     throw(:incomplete)
   end
 
-  @compile {:inline, [unpack_continue: 6]}
+  # Parse List
+  defp unpack_list(bin, 0, acc, _options) do
+    {:lists.reverse(acc), bin}
+  end
 
-  defp unpack_continue(rest, result, options, outer, index, count) do
-    case index + 1 do
-      ^count ->
-        unpack_continue(rest, result, options, outer, count)
-
-      index ->
-        unpack(rest, result, options, outer, index, count)
+  for {pats, value} <- @primitives do
+    for pat <- pats do
+      defp unpack_list(<<unquote(pat), rest::bits>>, remaining, acc, unquote(quote(do: options))) do
+        unpack_list(rest, remaining - 1, [unquote(value) | acc], unquote(quote(do: options)))
+      end
     end
   end
 
-  defp unpack_continue(<<buffer::bits>>, result, options, [kind, index, length | outer], count) do
-    result = build_collection(result, count, kind)
-
-    case index + 1 do
-      ^length ->
-        unpack_continue(buffer, result, options, outer, length)
-
-      index ->
-        unpack(buffer, result, options, outer, index, length)
+  for {pats, {unpack_collection, size}} <- @collection_pats do
+    for pat <- pats do
+      defp unpack_list(<<unquote(pat), rest::bits>>, remaining, acc, options) do
+        # Parse sublist
+        {element, after_element} = unquote(unpack_collection)(rest, unquote(size), [], options)
+        # Continue parsing current list
+        unpack_list(after_element, remaining - 1, [element | acc], options)
+      end
     end
   end
 
-  defp unpack_continue(<<buffer::bits>>, [value], _options, [], 1) do
-    {value, buffer}
+  defp unpack_list(<<byte, _::bits>>, _remaining, _acc, _options) do
+    throw({:invalid_format, byte})
+  end
+
+  defp unpack_list(<<_::bits>>, _remaining, _acc, _options) do
+    throw(:incomplete)
+  end
+
+  # Parse Map
+  defp unpack_map(bin, 0, acc, _options) do
+    {:maps.from_list(acc), bin}
+  end
+
+  for {pats, value} <- @primitives do
+    for pat <- pats do
+      defp unpack_map(<<unquote(pat), rest::bits>>, remaining, acc, unquote(quote(do: options))) do
+        unpack_map_value(rest, remaining, acc, unquote(value), unquote(quote(do: options)))
+      end
+    end
+  end
+
+  for {pats, {unpack_collection, size}} <- @collection_pats do
+    for pat <- pats do
+      defp unpack_map(<<unquote(pat), rest::bits>>, remaining, acc, options) do
+        # subcollection as key
+        {key, after_element} = unquote(unpack_collection)(rest, unquote(size), [], options)
+        unpack_map_value(after_element, remaining, acc, key, options)
+      end
+    end
+  end
+
+  defp unpack_map(<<byte, _::bits>>, _remaining, _acc, _options) do
+    throw({:invalid_format, byte})
+  end
+
+  defp unpack_map(<<_::bits>>, _remaining, _acc, _options) do
+    throw(:incomplete)
+  end
+
+  @compile {:inline, [unpack_map_value: 5]}
+
+  # Parse Map value
+  for {pats, value} <- @primitives do
+    for pat <- pats do
+      defp unpack_map_value(
+             <<unquote(pat), rest::bits>>,
+             remaining,
+             acc,
+             key,
+             unquote(quote(do: options))
+           ) do
+        unpack_map(
+          rest,
+          remaining - 1,
+          [{key, unquote(value)} | acc],
+          unquote(quote(do: options))
+        )
+      end
+    end
+  end
+
+  for {pats, {unpack_collection, size}} <- @collection_pats do
+    for pat <- pats do
+      defp unpack_map_value(<<unquote(pat), rest::bits>>, remaining, acc, key, options) do
+        # Parse subcollection
+        {element, after_element} = unquote(unpack_collection)(rest, unquote(size), [], options)
+        # Continue parsing current map
+        unpack_map(after_element, remaining - 1, [{key, element} | acc], options)
+      end
+    end
+  end
+
+  defp unpack_map_value(<<byte, _::bits>>, _remaining, _acc, _key, _options) do
+    throw({:invalid_format, byte})
+  end
+
+  defp unpack_map_value(<<_::bits>>, _remaining, _acc, _key, _options) do
+    throw(:incomplete)
   end
 
   defp unpack_binary(content, %{binary: true}) do
@@ -213,31 +261,5 @@ defmodule Msgpax.Unpacker do
 
   defp unpack_ext(struct, _options) do
     struct
-  end
-
-  @compile {:inline, [build_collection: 3]}
-
-  defp build_collection(result, count, :list) do
-    build_list(result, [], count)
-  end
-
-  defp build_collection(result, count, :map) do
-    build_map(result, [], count)
-  end
-
-  defp build_list(result, list, 0) do
-    [list | result]
-  end
-
-  defp build_list([item | rest], list, count) do
-    build_list(rest, [item | list], count - 1)
-  end
-
-  defp build_map(result, pairs, 0) do
-    [:maps.from_list(pairs) | result]
-  end
-
-  defp build_map([value, key | rest], pairs, count) do
-    build_map(rest, [{key, value} | pairs], count - 2)
   end
 end
