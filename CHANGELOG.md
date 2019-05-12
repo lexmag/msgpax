@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.3
+
+* Optimized packing by generating less garbage.
+
 ## v2.2.2
 
 * Fixed bare struct unpacking in `Msgpax.PlugParser`—the same behaviour when unpacking maps.
