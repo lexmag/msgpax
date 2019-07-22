@@ -145,11 +145,14 @@ defimpl Msgpax.Packer, for: Map do
   end
 
   def pack(map) do
-    [format(map)] ++
-      for {key, value} <- map do
-        [@protocol.pack(key) | @protocol.pack(value)]
-      end
+    [format(map) | map |> Map.to_list() |> pack([])]
   end
+
+  defp pack([{key, value} | rest], result) do
+    pack(rest, [@protocol.pack(key), @protocol.pack(value) | result])
+  end
+
+  defp pack([], result), do: result
 
   defp format(map) do
     length = map_size(map)
@@ -165,11 +168,14 @@ end
 
 defimpl Msgpax.Packer, for: List do
   def pack(list) do
-    [format(list)] ++
-      for item <- list do
-        @protocol.pack(item)
-      end
+    [format(list) | list |> Enum.reverse() |> pack([])]
   end
+
+  defp pack([item | rest], result) do
+    pack(rest, [@protocol.pack(item) | result])
+  end
+
+  defp pack([], result), do: result
 
   defp format(list) do
     length = length(list)
