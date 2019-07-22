@@ -38,9 +38,9 @@ defmodule Msgpax.Unpacker do
   end
 
   primitives = %{
-    [quote(do: <<0xC0>>)] => quote(do: nil),
-    [quote(do: <<0xC2>>)] => quote(do: false),
-    [quote(do: <<0xC3>>)] => quote(do: true),
+    [quote(do: <<0xC0>>)] => nil,
+    [quote(do: <<0xC2>>)] => false,
+    [quote(do: <<0xC3>>)] => true,
     # Strings
     [
       quote(do: <<0b101::3, length::5, value::size(length)-bytes>>),
