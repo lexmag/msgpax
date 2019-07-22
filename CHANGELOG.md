@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.4
+
+* Optimized list and map packing.
+
 ## v2.2.3
 
 * Optimized packing by generating less garbage.
