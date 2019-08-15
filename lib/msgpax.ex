@@ -15,6 +15,9 @@ defmodule Msgpax do
   `false`                           | boolean       | `false`
   `-1`                              | integer       | `-1`
   `1.25`                            | float         | `1.25`
+  *N/A*                             | NaN           | `:NaN`
+  *N/A*                             | infinity      | `:inf`
+  *N/A*                             | -infinity     | `:"-inf"`
   `:ok`                             | string        | `"ok"`
   `Atom`                            | string        | `"Elixir.Atom"`
   `"str"`                           | string        | `"str"`

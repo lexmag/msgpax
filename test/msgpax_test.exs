@@ -108,6 +108,18 @@ defmodule MsgpaxTest do
     assert_format 42.1, <<203>>
   end
 
+  test "ieee 754 32-bit inf / nan" do
+    assert Msgpax.unpack(<<202, 0x7FC00000::32>>) == {:ok, :NaN}
+    assert Msgpax.unpack(<<202, 0x7F800000::32>>) == {:ok, :inf}
+    assert Msgpax.unpack(<<202, 0xFF800000::32>>) == {:ok, :"-inf"}
+  end
+
+  test "ieee 754 64-bit inf / nan" do
+    assert Msgpax.unpack(<<203, 0x7FF8000000000000::64>>) == {:ok, :NaN}
+    assert Msgpax.unpack(<<203, 0x7FF0000000000000::64>>) == {:ok, :inf}
+    assert Msgpax.unpack(<<203, 0xFFF0000000000000::64>>) == {:ok, :"-inf"}
+  end
+
   test "positive fixint" do
     assert_format 0, <<0>>
     assert_format 127, <<127>>

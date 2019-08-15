@@ -63,6 +63,13 @@ defmodule Msgpax.Unpacker do
       quote(do: <<0xD2, value::32-signed>>),
       quote(do: <<0xD3, value::64-signed>>)
     ] => quote(do: value),
+    # IEEE 754 NaN / infinity
+    [quote(do: <<0xCA, 0::1, 0b11111111::8, 0::23>>)] => :inf,
+    [quote(do: <<0xCA, 1::1, 0b11111111::8, 0::23>>)] => :"-inf",
+    [quote(do: <<0xCA, _sign::1, 0b11111111::8, _fraction::23>>)] => :NaN,
+    [quote(do: <<0xCB, 0::1, 0b11111111111::11, 0::52>>)] => :inf,
+    [quote(do: <<0xCB, 1::1, 0b11111111111::11, 0::52>>)] => :"-inf",
+    [quote(do: <<0xCB, _sign::1, 0b11111111111::11, _fraction::52>>)] => :NaN,
     # Negative fixint
     [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000)
   }
