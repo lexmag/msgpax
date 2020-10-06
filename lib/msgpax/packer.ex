@@ -105,131 +105,149 @@ defprotocol Msgpax.Packer do
   def pack(term)
 end
 
-defimpl Msgpax.Packer, for: Atom do
-  def pack(nil), do: [0xC0]
-  def pack(false), do: [0xC2]
-  def pack(true), do: [0xC3]
+require MsgPax.PackerMacros
 
-  def pack(atom) do
-    atom
-    |> Atom.to_string()
-    |> @protocol.BitString.pack()
-  end
-end
+MsgPax.PackerMacros.excluded?(:atom) do
+  defimpl Msgpax.Packer, for: Atom do
+    def pack(nil), do: [0xC0]
+    def pack(false), do: [0xC2]
+    def pack(true), do: [0xC3]
 
-defimpl Msgpax.Packer, for: BitString do
-  def pack(binary) when is_binary(binary) do
-    [format(binary) | binary]
-  end
-
-  def pack(bits) do
-    throw({:not_encodable, bits})
-  end
-
-  defp format(binary) do
-    size = byte_size(binary)
-
-    cond do
-      size < 32 -> 0b10100000 + size
-      size < 256 -> [0xD9, size]
-      size < 0x10000 -> <<0xDA, size::16>>
-      size < 0x100000000 -> <<0xDB, size::32>>
-      true -> throw({:too_big, binary})
+    def pack(atom) do
+      atom
+      |> Atom.to_string()
+      |> @protocol.BitString.pack()
     end
   end
 end
 
-defimpl Msgpax.Packer, for: Map do
-  defmacro __deriving__(module, struct, options) do
-    @protocol.Any.deriving(module, struct, options)
-  end
+MsgPax.PackerMacros.excluded?(:bitstring) do
+  defimpl Msgpax.Packer, for: BitString do
+    def pack(binary) when is_binary(binary) do
+      [format(binary) | binary]
+    end
 
-  def pack(map) do
-    [format(map) | map |> Map.to_list() |> pack([])]
-  end
+    def pack(bits) do
+      throw({:not_encodable, bits})
+    end
 
-  defp pack([{key, value} | rest], result) do
-    pack(rest, [@protocol.pack(key), @protocol.pack(value) | result])
-  end
+    defp format(binary) do
+      size = byte_size(binary)
 
-  defp pack([], result), do: result
-
-  defp format(map) do
-    length = map_size(map)
-
-    cond do
-      length < 16 -> 0b10000000 + length
-      length < 0x10000 -> <<0xDE, length::16>>
-      length < 0x100000000 -> <<0xDF, length::32>>
-      true -> throw({:too_big, map})
+      cond do
+        size < 32 -> 0b10100000 + size
+        size < 256 -> [0xD9, size]
+        size < 0x10000 -> <<0xDA, size::16>>
+        size < 0x100000000 -> <<0xDB, size::32>>
+        true -> throw({:too_big, binary})
+      end
     end
   end
 end
 
-defimpl Msgpax.Packer, for: List do
-  def pack(list) do
-    [format(list) | list |> Enum.reverse() |> pack([])]
-  end
+MsgPax.PackerMacros.excluded?(:map) do
+  defimpl Msgpax.Packer, for: Map do
+    defmacro __deriving__(module, struct, options) do
+      @protocol.Any.deriving(module, struct, options)
+    end
 
-  defp pack([item | rest], result) do
-    pack(rest, [@protocol.pack(item) | result])
-  end
+    def pack(map) do
+      [format(map) | map |> Map.to_list() |> pack([])]
+    end
 
-  defp pack([], result), do: result
+    defp pack([{key, value} | rest], result) do
+      pack(rest, [@protocol.pack(key), @protocol.pack(value) | result])
+    end
 
-  defp format(list) do
-    length = length(list)
+    defp pack([], result), do: result
 
-    cond do
-      length < 16 -> 0b10010000 + length
-      length < 0x10000 -> <<0xDC, length::16>>
-      length < 0x100000000 -> <<0xDD, length::32>>
-      true -> throw({:too_big, list})
+    defp format(map) do
+      length = map_size(map)
+
+      cond do
+        length < 16 -> 0b10000000 + length
+        length < 0x10000 -> <<0xDE, length::16>>
+        length < 0x100000000 -> <<0xDF, length::32>>
+        true -> throw({:too_big, map})
+      end
     end
   end
 end
 
-defimpl Msgpax.Packer, for: Float do
-  def pack(num) do
-    <<0xCB, num::64-float>>
-  end
-end
-
-defimpl Msgpax.Packer, for: Integer do
-  def pack(int) when int < 0 do
-    cond do
-      int >= -32 -> [0x100 + int]
-      int >= -128 -> [0xD0, 0x100 + int]
-      int >= -0x8000 -> <<0xD1, int::16>>
-      int >= -0x80000000 -> <<0xD2, int::32>>
-      int >= -0x8000000000000000 -> <<0xD3, int::64>>
-      true -> throw({:too_big, int})
+MsgPax.PackerMacros.excluded?(:list) do
+  defimpl Msgpax.Packer, for: List do
+    def pack(list) do
+      [format(list) | list |> Enum.reverse() |> pack([])]
     end
-  end
 
-  def pack(int) do
-    cond do
-      int < 128 -> [int]
-      int < 256 -> [0xCC, int]
-      int < 0x10000 -> <<0xCD, int::16>>
-      int < 0x100000000 -> <<0xCE, int::32>>
-      int < 0x10000000000000000 -> <<0xCF, int::64>>
-      true -> throw({:too_big, int})
+    defp pack([item | rest], result) do
+      pack(rest, [@protocol.pack(item) | result])
+    end
+
+    defp pack([], result), do: result
+
+    defp format(list) do
+      length = length(list)
+
+      cond do
+        length < 16 -> 0b10010000 + length
+        length < 0x10000 -> <<0xDC, length::16>>
+        length < 0x100000000 -> <<0xDD, length::32>>
+        true -> throw({:too_big, list})
+      end
     end
   end
 end
 
-defimpl Msgpax.Packer, for: Msgpax.Bin do
-  def pack(%{data: data}) when is_binary(data), do: [format(data) | data]
+MsgPax.PackerMacros.excluded?(:float) do
+  defimpl Msgpax.Packer, for: Float do
 
-  defp format(binary) do
-    size = byte_size(binary)
+    def pack(num) do
+      <<0xCB, num::64-float>>
+    end
+  end
+end
 
-    cond do
-      size < 256 -> [0xC4, size]
-      size < 0x10000 -> <<0xC5, size::16>>
-      size < 0x100000000 -> <<0xC6, size::32>>
-      true -> throw({:too_big, binary})
+MsgPax.PackerMacros.excluded?(:integer) do
+  defimpl Msgpax.Packer, for: Integer do
+    @spec pack(any) :: <<_::24, _::_*16>> | [...]
+    def pack(int) when int < 0 do
+      cond do
+        int >= -32 -> [0x100 + int]
+        int >= -128 -> [0xD0, 0x100 + int]
+        int >= -0x8000 -> <<0xD1, int::16>>
+        int >= -0x80000000 -> <<0xD2, int::32>>
+        int >= -0x8000000000000000 -> <<0xD3, int::64>>
+        true -> throw({:too_big, int})
+      end
+    end
+
+    def pack(int) do
+      cond do
+        int < 128 -> [int]
+        int < 256 -> [0xCC, int]
+        int < 0x10000 -> <<0xCD, int::16>>
+        int < 0x100000000 -> <<0xCE, int::32>>
+        int < 0x10000000000000000 -> <<0xCF, int::64>>
+        true -> throw({:too_big, int})
+      end
+    end
+  end
+end
+
+MsgPax.PackerMacros.excluded?(:bin) do
+  defimpl Msgpax.Packer, for: Msgpax.Bin do
+    def pack(%{data: data}) when is_binary(data), do: [format(data) | data]
+
+    defp format(binary) do
+      size = byte_size(binary)
+
+      cond do
+        size < 256 -> [0xC4, size]
+        size < 0x10000 -> <<0xC5, size::16>>
+        size < 0x100000000 -> <<0xC6, size::32>>
+        true -> throw({:too_big, binary})
+      end
     end
   end
 end
