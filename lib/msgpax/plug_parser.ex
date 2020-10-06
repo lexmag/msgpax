@@ -1,4 +1,4 @@
-if Code.ensure_compiled?(Plug) do
+if Code.ensure_compiled(Plug) == {:module, Plug} do
   defmodule Msgpax.PlugParser do
     @moduledoc """
     A `Plug.Parsers` plug for parsing a MessagePack-encoded body.
