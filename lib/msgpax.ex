@@ -62,7 +62,7 @@ defmodule Msgpax do
       {:ok, <<163, 102, 111, 111>>}
 
   """
-  @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t() | Exception.t}
+  @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t() | Exception.t()}
   def pack(term, options \\ []) when is_list(options) do
     iodata? = Keyword.get(options, :iodata, true)
 
