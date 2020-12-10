@@ -179,6 +179,10 @@ defmodule MsgpaxTest do
              {:error, %PackError{reason: {:not_encodable, <<5::3>>}}}
   end
 
+  test "protocol not implemented" do
+    assert {:error, %Protocol.UndefinedError{}} = Msgpax.pack([{}])
+  end
+
   test "pack!/2 with the :iodata option" do
     assert Msgpax.pack!([], iodata: true) == [144]
     assert Msgpax.pack!([], iodata: false) == <<144>>
