@@ -17,10 +17,7 @@ defmodule Msgpax.PackError do
   """
 
   @type t :: %__MODULE__{
-          reason:
-            {:too_big, any}
-            | {:not_encodable, any}
-            | %Protocol.UndefinedError{protocol: Msgpax.Packer}
+          reason: {:too_big, any} | {:not_encodable, any}
         }
 
   defexception [:reason]
@@ -32,9 +29,6 @@ defmodule Msgpax.PackError do
 
       {:not_encodable, term} ->
         "value is not encodable: #{inspect(term)}"
-
-      %Protocol.UndefinedError{protocol: Msgpax.Packer} = e ->
-        Protocol.UndefinedError.message(e)
     end
   end
 end
