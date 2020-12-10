@@ -62,7 +62,7 @@ defmodule Msgpax do
       {:ok, <<163, 102, 111, 111>>}
 
   """
-  @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t()}
+  @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t() | Exception.t}
   def pack(term, options \\ []) when is_list(options) do
     iodata? = Keyword.get(options, :iodata, true)
 
@@ -72,8 +72,8 @@ defmodule Msgpax do
       :throw, reason ->
         {:error, %Msgpax.PackError{reason: reason}}
 
-      :error, %Protocol.UndefinedError{protocol: Msgpax.Packer} = e ->
-        {:error, %Msgpax.PackError{reason: e}}
+      :error, %Protocol.UndefinedError{protocol: Msgpax.Packer} = exception ->
+        {:error, exception}
     else
       iodata when iodata? ->
         {:ok, iodata}
