@@ -100,7 +100,7 @@ defmodule Msgpax do
       <<163, 102, 111, 111>>
 
       iex> Msgpax.pack!(20000000000000000000)
-      ** (Msgpax.PackError) value is too big: 20000000000000000000
+      ** (Msgpax.PackError) too big value: 20000000000000000000
 
       iex> Msgpax.pack!("foo", iodata: false)
       <<163, 102, 111, 111>>
