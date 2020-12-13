@@ -26,6 +26,15 @@ defmodule Msgpax do
   `#Msgpax.Ext<4, "02:12">`         | extension     | `#Msgpax.Ext<4, "02:12">`
   `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
+  ## Excluding Default Packers
+
+  Default packers can be excluded by passing a config option:
+    `config: :msgpack, exclude_packers: [:atom, :float]`
+
+  The packers that can be exlucded are: :atom, :bitstring, :map, :list, :float, :integer, and :bin
+
+  This can be used to override default behaviors, like serializing to float32s. Use this sparingly as it's global and can break things.
+
   """
 
   alias __MODULE__.Packer

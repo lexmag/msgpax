@@ -1,4 +1,4 @@
-if Code.ensure_compiled?(Plug) do
+if Code.ensure_compiled(Plug) == {:module, Plug} do
   defmodule Msgpax.PlugParser do
     @moduledoc """
     A `Plug.Parsers` plug for parsing a MessagePack-encoded body.
@@ -81,7 +81,7 @@ if Code.ensure_compiled?(Plug) do
          when is_atom(module) and is_atom(function) and is_list(extra_args) do
       arity = length(extra_args) + 1
 
-      unless Code.ensure_compiled?(module) and function_exported?(module, function, arity) do
+      unless Code.ensure_compiled(module) == {:module, module} and function_exported?(module, function, arity) do
         raise ArgumentError,
               "invalid :unpacker option. Undefined function " <>
                 Exception.format_mfa(module, function, arity)
@@ -89,7 +89,7 @@ if Code.ensure_compiled?(Plug) do
     end
 
     defp validate_unpacker!(unpacker) when is_atom(unpacker) do
-      unless Code.ensure_compiled?(unpacker) do
+      unless Code.ensure_compiled(unpacker) == {:module, unpacker} do
         raise ArgumentError,
               "invalid :unpacker option. The module #{inspect(unpacker)} is not " <>
                 "loaded and could not be found"
