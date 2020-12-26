@@ -126,6 +126,69 @@ defmodule Msgpax do
   end
 
   @doc """
+  Serializes `term` and turns the result into a `Msgpax.Fragment`.
+
+  This function returns `{:ok, fragment}` if the serialization is successful,
+  `{:error, exception}` otherwise, where `exception` is a `Msgpax.PackError`
+  struct which can be raised or converted to a more human-friendly error
+  message with `Exception.message/1`. See `Msgpax.PackError` for all the
+  possible reasons for a packing error.
+
+  This is useful for optimization, for instance to avoid packing heavy terms
+  repetitively.
+
+  Another good use case for fragments would be data encapsulation. For example
+  if we want to "interpolate" some MessagePack data into the payload without
+  having to unpack and pack them.
+
+  ## Options
+
+  This function accepts the same options as `pack/2`.
+
+  ## Examples
+
+      iex> {:ok, fragment} = Msgpax.pack_fragment("HUGE")
+      iex> {:ok, packed} = Msgpax.pack([fragment, fragment])
+      iex> IO.iodata_to_binary(packed)
+      <<146, 164, 72, 85, 71, 69, 164, 72, 85, 71, 69>>
+
+  """
+  @spec pack_fragment(term, Keyword.t()) ::
+          {:ok, Msgpax.Fragment.t()} | {:error, Msgpax.PackError.t() | Exception.t()}
+  def pack_fragment(term, options \\ []) do
+    with {:ok, packed} <- Msgpax.pack(term, options) do
+      {:ok, Msgpax.Fragment.new(packed)}
+    end
+  end
+
+  @doc """
+  Works as `pack_fragment/2`, but raises if there's an error.
+
+  This function works like `pack_fragment!/2`, except it returns the `term` (instead of
+  `{:ok, term}`) if the serialization is successful or raises a `Msgpax.PackError`
+  exception otherwise.
+
+  ## Options
+
+  This function accepts the same options as `pack_fragment/2`.
+
+  ## Examples
+
+      iex> fragment = Msgpax.pack_fragment!("HUGE")
+      iex> {:ok, packed} = Msgpax.pack([fragment, fragment])
+      iex> IO.iodata_to_binary(packed)
+      <<146, 164, 72, 85, 71, 69, 164, 72, 85, 71, 69>>
+
+  """
+  @spec pack_fragment!(term, Keyword.t()) :: Msgpax.Fragment.t() | no_return()
+  def pack_fragment!(term, options \\ []) do
+    case pack_fragment(term, options) do
+      {:ok, fragment} -> fragment
+      {:error, exception} -> raise exception
+    end
+  end
+
+  @doc """
   Deserializes part of the given `iodata`.
 
   This function works like `unpack/2`, but instead of requiring the input to be
