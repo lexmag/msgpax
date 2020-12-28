@@ -19,13 +19,14 @@ defmodule Msgpax do
   `Atom`                            | string        | `"Elixir.Atom"`
   `"str"`                           | string        | `"str"`
   `"\xFF\xFF"`                      | string        | `"\xFF\xFF"`
-  `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`
+  `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`<sup>1</sup>
   `%{foo: "bar"}`                   | map           | `%{"foo" => "bar"}`
   `[foo: "bar"]`                    | map           | `%{"foo" => "bar"}`
   `[1, true]`                       | array         | `[1, true]`
   `#Msgpax.Ext<4, "02:12">`         | extension     | `#Msgpax.Ext<4, "02:12">`
   `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
+  <sup>1</sup>To deserialize back to `Msgpax.Bin` structs see the `unpack/2` options.
   """
 
   alias __MODULE__.Packer
