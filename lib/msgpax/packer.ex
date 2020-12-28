@@ -103,6 +103,14 @@ defprotocol Msgpax.Packer do
   It returns an iodata result.
   """
   def pack(term)
+
+  Kernel.def(pack_nan(), do: <<0xCB, -1::64>>)
+
+  require Bitwise
+
+  Kernel.def pack_infinity(sign) when sign in [-1, 1] do
+    <<0xCB, Bitwise.bsr(1 - sign, 1)::1, -1::11, 0::52>>
+  end
 end
 
 defimpl Msgpax.Packer, for: Atom do
