@@ -193,7 +193,8 @@ defmodule Msgpax do
   ## Options
 
     * `:binary` - (boolean) if `true`, then binaries are decoded as `Msgpax.Bin`
-      structs instead of plain Elixir binaries.
+      structs instead of plain Elixir binaries. Defaults to `false`.
+
     * `:ext` - (module) a module that implements the `Msgpax.Ext.Unpacker`
       behaviour. For more information, see the docs for `Msgpax.Ext.Unpacker`.
 
