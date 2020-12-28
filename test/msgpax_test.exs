@@ -108,7 +108,7 @@ defmodule MsgpaxTest do
     assert_format 42.1, <<203>>
 
     for {packed, value} <- %{
-          # 32-bit
+          # 32-bit.
           <<202, 0x7FC00000::32>> => Msgpax.NaN,
           <<202, 0x7F800000::32>> => Msgpax.Infinity,
           <<202, 0xFF800000::32>> => Msgpax.NegInfinity,
