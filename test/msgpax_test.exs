@@ -104,20 +104,28 @@ defmodule MsgpaxTest do
     assert_format Atom, <<171>>, "Elixir.Atom"
   end
 
-  test "float" do
+  test "floats" do
     assert_format 42.1, <<203>>
-  end
 
-  test "ieee 754 32-bit inf / nan" do
-    assert Msgpax.unpack(<<202, 0x7FC00000::32>>) == {:ok, :NaN}
-    assert Msgpax.unpack(<<202, 0x7F800000::32>>) == {:ok, :inf}
-    assert Msgpax.unpack(<<202, 0xFF800000::32>>) == {:ok, :"-inf"}
-  end
+    for {packed, value} <- %{
+          # 32-bit
+          <<202, 0x7FC00000::32>> => Msgpax.NaN,
+          <<202, 0x7F800000::32>> => Msgpax.Infinity,
+          <<202, 0xFF800000::32>> => Msgpax.NegInfinity,
+          # 64-bit
+          <<203, 0x7FF8::16, 0::48>> => Msgpax.NaN,
+          <<203, 0x7FF0::16, 0::48>> => Msgpax.Infinity,
+          <<203, 0xFFF0::16, 0::48>> => Msgpax.NegInfinity
+        } do
+      assert Msgpax.unpack(packed) ==
+               {:error, %Msgpax.UnpackError{reason: {:nonfinite_float, value}}}
 
-  test "ieee 754 64-bit inf / nan" do
-    assert Msgpax.unpack(<<203, 0x7FF8000000000000::64>>) == {:ok, :NaN}
-    assert Msgpax.unpack(<<203, 0x7FF0000000000000::64>>) == {:ok, :inf}
-    assert Msgpax.unpack(<<203, 0xFFF0000000000000::64>>) == {:ok, :"-inf"}
+      assert Msgpax.unpack(packed, nonfinite_floats: true) == {:ok, value}
+    end
+
+    assert Msgpax.Packer.pack_nan() == <<203, -1::64>>
+    assert Msgpax.Packer.pack_infinity(1) == <<203, 0x7FF0::16, 0::48>>
+    assert Msgpax.Packer.pack_infinity(-1) == <<203, 0xFFF0::16, 0::48>>
   end
 
   test "positive fixint" do
