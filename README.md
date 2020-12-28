@@ -1,6 +1,6 @@
 # Msgpax
 
-[![Build Status](https://travis-ci.com/lexmag/msgpax.svg?branch=master)](https://travis-ci.com/lexmag/msgpax)
+![CI Status](https://github.com/lexmag/msgpax/workflows/CI/badge.svg)
 [![Hex Version](https://img.shields.io/hexpm/v/msgpax.svg)](https://hex.pm/packages/msgpax)
 
 This library provides an API for serializing and de-serializing Elixir terms using the [MessagePack](http://msgpack.org/) format.

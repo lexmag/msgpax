@@ -22,13 +22,14 @@ defmodule Msgpax do
   `Atom`                            | string        | `"Elixir.Atom"`
   `"str"`                           | string        | `"str"`
   `"\xFF\xFF"`                      | string        | `"\xFF\xFF"`
-  `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`
+  `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`<sup>1</sup>
   `%{foo: "bar"}`                   | map           | `%{"foo" => "bar"}`
   `[foo: "bar"]`                    | map           | `%{"foo" => "bar"}`
   `[1, true]`                       | array         | `[1, true]`
   `#Msgpax.Ext<4, "02:12">`         | extension     | `#Msgpax.Ext<4, "02:12">`
   `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
+  <sup>1</sup>To deserialize back to `Msgpax.Bin` structs see the `unpack/2` options.
   """
 
   alias __MODULE__.Packer
@@ -65,7 +66,7 @@ defmodule Msgpax do
       {:ok, <<163, 102, 111, 111>>}
 
   """
-  @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t()}
+  @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t() | Exception.t()}
   def pack(term, options \\ []) when is_list(options) do
     iodata? = Keyword.get(options, :iodata, true)
 
@@ -74,6 +75,9 @@ defmodule Msgpax do
     catch
       :throw, reason ->
         {:error, %Msgpax.PackError{reason: reason}}
+
+      :error, %Protocol.UndefinedError{protocol: Msgpax.Packer} = exception ->
+        {:error, exception}
     else
       iodata when iodata? ->
         {:ok, iodata}
@@ -100,7 +104,7 @@ defmodule Msgpax do
       <<163, 102, 111, 111>>
 
       iex> Msgpax.pack!(20000000000000000000)
-      ** (Msgpax.PackError) value is too big: 20000000000000000000
+      ** (Msgpax.PackError) too big value: 20000000000000000000
 
       iex> Msgpax.pack!("foo", iodata: false)
       <<163, 102, 111, 111>>
@@ -193,7 +197,8 @@ defmodule Msgpax do
   ## Options
 
     * `:binary` - (boolean) if `true`, then binaries are decoded as `Msgpax.Bin`
-      structs instead of plain Elixir binaries.
+      structs instead of plain Elixir binaries. Defaults to `false`.
+
     * `:ext` - (module) a module that implements the `Msgpax.Ext.Unpacker`
       behaviour. For more information, see the docs for `Msgpax.Ext.Unpacker`.
 

@@ -25,10 +25,10 @@ defmodule Msgpax.PackError do
   def message(%__MODULE__{} = exception) do
     case exception.reason do
       {:too_big, term} ->
-        "value is too big: #{inspect(term)}"
+        "too big value: #{inspect(term)}"
 
       {:not_encodable, term} ->
-        "value is not encodable: #{inspect(term)}"
+        "not encodable value: #{inspect(term)}"
     end
   end
 end
@@ -49,7 +49,7 @@ defprotocol Msgpax.Packer do
       be encoded
     * maps with more than `(2^32) - 1` elements cannot be encoded
     * lists with more than `(2^32) - 1` elements cannot be encoded
-    * integers bigger than `(2^64) - 1` or smaller than `-2^63` cannot be
+    * integers larger than `(2^64) - 1` or smaller than `-2^63` cannot be
       encoded
 
   ## Serializing a subset of fields for structs

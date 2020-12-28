@@ -1,0 +1,54 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  format:
+    name: Code formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install OTP and Elixir
+        uses: actions/setup-elixir@v1
+        with:
+          otp-version: 20.3
+          elixir-version: 1.7
+
+      - name: Check format
+        run: mix format --check-formatted
+
+  test:
+    name: Test suite
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        pair:
+          - erlang: 18.3
+            elixir: 1.4
+          - erlang: 19.3
+            elixir: 1.5
+          - erlang: 20.3
+            elixir: 1.6
+          - erlang: 21.0
+            elixir: 1.7
+
+    env:
+      MIX_ENV: test
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install OTP and Elixir
+        uses: actions/setup-elixir@v1
+        with:
+          otp-version: ${{ matrix.pair.erlang }}
+          elixir-version: ${{ matrix.pair.elixir }}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run tests
+        run: mix test
