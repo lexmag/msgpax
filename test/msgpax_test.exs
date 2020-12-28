@@ -122,10 +122,6 @@ defmodule MsgpaxTest do
 
       assert Msgpax.unpack(packed, nonfinite_floats: true) == {:ok, value}
     end
-
-    assert Msgpax.Packer.pack_nan() == <<203, -1::64>>
-    assert Msgpax.Packer.pack_infinity(1) == <<203, 0x7FF0::16, 0::48>>
-    assert Msgpax.Packer.pack_infinity(-1) == <<203, 0xFFF0::16, 0::48>>
   end
 
   test "positive fixint" do
