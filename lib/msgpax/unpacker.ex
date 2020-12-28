@@ -9,6 +9,7 @@ defmodule Msgpax.UnpackError do
             | {:invalid_format, integer}
             | :incomplete
             | {:ext_unpack_failure, module, Msgpax.Ext.t()}
+            | {:nonfinite_float, atom}
         }
 
   defexception [:reason]
@@ -26,12 +27,21 @@ defmodule Msgpax.UnpackError do
 
       {:ext_unpack_failure, module, struct} ->
         "module #{inspect(module)} could not unpack extension: #{inspect(struct)}"
+
+      {:nonfinite_float, value} ->
+        "encountered non-finite float value: #{inspect(value)}"
     end
   end
 end
 
 defmodule Msgpax.Unpacker do
   @moduledoc false
+
+  alias Msgpax.{
+    NaN,
+    Infinity,
+    NegInfinity
+  }
 
   def unpack(<<buffer::bits>>, options) do
     unpack(buffer, [], Map.new(options), [], 0, 1)
@@ -63,6 +73,18 @@ defmodule Msgpax.Unpacker do
       quote(do: <<0xD2, value::32-signed>>),
       quote(do: <<0xD3, value::64-signed>>)
     ] => quote(do: value),
+    [
+      quote(do: <<0xCA, 0::1, 0xFF, 0::23>>),
+      quote(do: <<0xCB, 0::1, 0xFF, 0b111::3, 0::52>>)
+    ] => quote(do: unpack_float(Infinity, var!(options))),
+    [
+      quote(do: <<0xCA, 1::1, 0xFF, 0::23>>),
+      quote(do: <<0xCB, 1::1, 0xFF, 0b111::3, 0::52>>)
+    ] => quote(do: unpack_float(NegInfinity, var!(options))),
+    [
+      quote(do: <<0xCA, _sign::1, 0xFF, _fraction::23>>),
+      quote(do: <<0xCB, _sign::1, 0xFF, 0b111::3, _fraction::52>>)
+    ] => quote(do: unpack_float(NaN, var!(options))),
     # Negative fixint
     [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000)
   }
@@ -184,6 +206,14 @@ defmodule Msgpax.Unpacker do
 
   defp unpack_binary(content, _options) do
     content
+  end
+
+  defp unpack_float(value, %{nonfinite_floats: true}) do
+    value
+  end
+
+  defp unpack_float(value, _options) do
+    throw({:nonfinite_float, value})
   end
 
   defp unpack_ext(type, content, options) do
