@@ -103,6 +103,24 @@ defprotocol Msgpax.Packer do
   It returns an iodata result.
   """
   def pack(term)
+
+  @doc """
+  Returns serizalied NaN in 64-bit format.
+  """
+  Kernel.def(pack_nan(), do: <<0xCB, -1::64>>)
+
+  require Bitwise
+
+  @doc """
+  Returns serizalied infinity in 64-bit format.
+  """
+  Kernel.def pack_infinity(:positive) do
+    <<0xCB, 0::1, -1::11, 0::52>>
+  end
+
+  Kernel.def pack_infinity(:negative) do
+    <<0xCB, -1::12, 0::52>>
+  end
 end
 
 defimpl Msgpax.Packer, for: Atom do
