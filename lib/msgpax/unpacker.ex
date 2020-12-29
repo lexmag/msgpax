@@ -73,6 +73,25 @@ defmodule Msgpax.Unpacker do
       quote(do: <<0xD2, value::32-signed>>),
       quote(do: <<0xD3, value::64-signed>>)
     ] => quote(do: value),
+    # Negative fixint
+    [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000),
+    # Extensions
+    [
+      quote(do: <<0xD4, type, content::1-bytes>>),
+      quote(do: <<0xD5, type, content::2-bytes>>),
+      quote(do: <<0xD6, type, content::4-bytes>>),
+      quote(do: <<0xD7, type, content::8-bytes>>),
+      quote(do: <<0xD8, type, content::16-bytes>>),
+      quote(do: <<0xC7, length::8, type, content::size(length)-bytes>>),
+      quote(do: <<0xC8, length::16, type, content::size(length)-bytes>>),
+      quote(do: <<0xC9, length::32, type, content::size(length)-bytes>>)
+    ] => quote(do: unpack_ext(type, content, var!(options))),
+    # Binaries
+    [
+      quote(do: <<0xC4, length::8, content::size(length)-bytes>>),
+      quote(do: <<0xC5, length::16, content::size(length)-bytes>>),
+      quote(do: <<0xC6, length::32, content::size(length)-bytes>>)
+    ] => quote(do: unpack_binary(content, var!(options))),
     [
       quote(do: <<0xCA, 0::1, 0xFF, 0::23>>),
       quote(do: <<0xCB, 0::1, 0xFF, 0b111::3, 0::52>>)
@@ -84,16 +103,13 @@ defmodule Msgpax.Unpacker do
     [
       quote(do: <<0xCA, _sign::1, 0xFF, _fraction::23>>),
       quote(do: <<0xCB, _sign::1, 0xFF, 0b111::3, _fraction::52>>)
-    ] => quote(do: unpack_float(NaN, var!(options))),
-    # Negative fixint
-    [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000)
+    ] => quote(do: unpack_float(NaN, var!(options)))
   }
 
   for {formats, value} <- primitives,
       format <- formats do
     defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      result = [unquote(value) | result]
-      unpack_continue(rest, result, options, outer, index, count)
+      unpack_continue(rest, [unquote(value) | result], options, outer, index, count)
     end
   end
 
@@ -105,7 +121,7 @@ defmodule Msgpax.Unpacker do
 
   for format <- lists do
     defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      case unquote(quote(do: length)) do
+      case var!(length, __MODULE__) do
         0 ->
           unpack_continue(rest, [[] | result], options, outer, index, count)
 
@@ -123,44 +139,13 @@ defmodule Msgpax.Unpacker do
 
   for format <- maps do
     defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      case unquote(quote(do: length)) do
+      case var!(length, __MODULE__) do
         0 ->
           unpack_continue(rest, [%{} | result], options, outer, index, count)
 
         length ->
           unpack(rest, result, options, [:map, index, count | outer], 0, length * 2)
       end
-    end
-  end
-
-  binaries = [
-    quote(do: <<0xC4, length::8, content::size(length)-bytes>>),
-    quote(do: <<0xC5, length::16, content::size(length)-bytes>>),
-    quote(do: <<0xC6, length::32, content::size(length)-bytes>>)
-  ]
-
-  for format <- binaries do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      value = unpack_binary(unquote(quote(do: content)), options)
-      unpack_continue(rest, [value | result], options, outer, index, count)
-    end
-  end
-
-  extensions = [
-    quote(do: <<0xD4, type, content::1-bytes>>),
-    quote(do: <<0xD5, type, content::2-bytes>>),
-    quote(do: <<0xD6, type, content::4-bytes>>),
-    quote(do: <<0xD7, type, content::8-bytes>>),
-    quote(do: <<0xD8, type, content::16-bytes>>),
-    quote(do: <<0xC7, length::8, type, content::size(length)-bytes>>),
-    quote(do: <<0xC8, length::16, type, content::size(length)-bytes>>),
-    quote(do: <<0xC9, length::32, type, content::size(length)-bytes>>)
-  ]
-
-  for format <- extensions do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      value = unpack_ext(unquote(quote(do: type)), unquote(quote(do: content)), options)
-      unpack_continue(rest, [value | result], options, outer, index, count)
     end
   end
 
