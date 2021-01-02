@@ -1,6 +1,7 @@
 defmodule Msgpax.Mixfile do
   use Mix.Project
 
+  @source_url "https://github.com/lexmag/msgpax"
   @version "2.2.4"
 
   def project do
@@ -16,7 +17,8 @@ defmodule Msgpax.Mixfile do
       docs: [
         main: "Msgpax",
         source_ref: "v#{@version}",
-        source_url: "https://github.com/lexmag/msgpax"
+        source_url: @source_url,
+        extras: ["CHANGELOG.md"]
       ]
     ]
   end
@@ -32,7 +34,10 @@ defmodule Msgpax.Mixfile do
     [
       maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
       licenses: ["ISC"],
-      links: %{"GitHub" => "https://github.com/lexmag/msgpax"}
+      links: %{
+        "Changelog" => "https://hexdocs.pm/msgpax/changelog.html",
+        "GitHub" => @source_url
+      }
     ]
   end
 
