@@ -25,7 +25,7 @@ defmodule Msgpax.Mixfile do
 
   defp description() do
     "This library provides an API for serializing" <>
-      " and de-serializing Elixir terms using the MessagePack format."
+      " and deserializing Elixir terms using the MessagePack format."
   end
 
   defp package() do

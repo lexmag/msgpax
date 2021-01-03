@@ -1,6 +1,6 @@
 defmodule Msgpax.UnpackError do
   @moduledoc """
-  Raised when there's an error in de-serializing some data into an Elixir term.
+  Raised when there's an error in deserializing some data into an Elixir term.
   """
 
   @type t :: %__MODULE__{
