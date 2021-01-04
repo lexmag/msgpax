@@ -24,8 +24,8 @@ defmodule Msgpax.Mixfile do
   def application(), do: []
 
   defp description() do
-    "This library provides an API for serializing" <>
-      " and deserializing Elixir terms using the MessagePack format."
+    "A fast and comprehensive library for serializing " <>
+      "and deserializing Elixir terms using the MessagePack format."
   end
 
   defp package() do
