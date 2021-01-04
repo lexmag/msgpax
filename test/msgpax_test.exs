@@ -187,7 +187,7 @@ defmodule MsgpaxTest do
   end
 
   test "fragment" do
-    assert {:ok, %Msgpax.Fragment{} = fragment} = Msgpax.pack_fragment("bar")
+    assert {:ok, %Msgpax.Fragment{} = fragment} = Msgpax.pack_fragment("bar", iodata: false)
     assert Msgpax.pack!(%{foo: fragment}) |> Msgpax.unpack!() == %{"foo" => "bar"}
 
     assert %Msgpax.Fragment{} = fragment = Msgpax.pack_fragment!("foo")
