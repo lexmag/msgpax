@@ -33,7 +33,7 @@ defmodule Msgpax do
 
   <sup>2</sup>NaN and ±infinity are not enabled by default. See `unpack/2` for for more information.
 
-  <sup>3</sup>To de-serialize back to `Msgpax.Bin` structs see the `unpack/2` options.
+  <sup>3</sup>To deserialize back to `Msgpax.Bin` structs see the `unpack/2` options.
   """
 
   alias __MODULE__.Packer
@@ -206,7 +206,7 @@ defmodule Msgpax do
     * `:ext` - (module) a module that implements the `Msgpax.Ext.Unpacker`
       behaviour. For more information, see the docs for `Msgpax.Ext.Unpacker`.
 
-    * `:nonfinite_floats` - (boolean) if `true`, de-serializes NaN and ±infinity to
+    * `:nonfinite_floats` - (boolean) if `true`, deserializes NaN and ±infinity to
       "signalling" atoms (see the "Data conversion" section), otherwise errors.
       Defaults to `false`.
 
