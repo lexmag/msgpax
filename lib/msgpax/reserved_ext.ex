@@ -2,7 +2,8 @@ defimpl Msgpax.Packer, for: DateTime do
   use Bitwise
 
   def pack(datetime) do
-    Msgpax.ReservedExt.new(-1, build_data(datetime))
+    -1
+    |> Msgpax.ReservedExt.new(build_data(datetime))
     |> @protocol.Msgpax.ReservedExt.pack()
   end
 
@@ -26,25 +27,27 @@ defimpl Msgpax.Packer, for: DateTime do
 end
 
 defmodule Msgpax.ReservedExt do
-  @moduledoc false
+  @moduledoc """
+  Reserved extensions automatically get handled by Msgpax.
+  """
 
   @behaviour Msgpax.Ext.Unpacker
 
   @nanosecond_range -62_167_219_200_000_000_000..253_402_300_799_999_999_999
 
-  @type type :: -128..-1
-  @type t :: %__MODULE__{
-          type: type,
-          data: binary
-        }
+  @typep type :: -128..-1
+  @opaque t :: %__MODULE__{type: type, data: binary}
 
   defstruct [:type, :data]
 
+  @doc false
   def new(type, data)
       when type in -128..-1 and is_binary(data) do
     %__MODULE__{type: type, data: data}
   end
 
+  @doc false
+  @impl true
   def unpack(%__MODULE__{type: -1, data: data}) do
     case data do
       <<seconds::32>> ->

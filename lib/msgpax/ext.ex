@@ -6,15 +6,15 @@ defmodule Msgpax.Ext do
   ## Examples
 
   Let's say we want to be able to serialize a custom type that consists of a
-  byte `data` repeated `reps` times. We could represent this as a `RepByte`
+  byte `data` repeated `count` times. We could represent this as a `RepByte`
   struct in Elixir:
 
       defmodule RepByte do
-        defstruct [:data, :reps]
+        defstruct [:data, :count]
       end
 
   A simple (albeit not space efficient) approach to encoding such data is simply
-  a binary containing `data` for `reps` times: `%RepByte{data: ?a, reps: 2}`
+  a binary containing `data` for `count` times: `%RepByte{data: ?a, count: 2}`
   would be encoded as `"aa"`.
 
   We can now define the `Msgpax.Packer` protocol for the `RepByte` struct to
@@ -24,16 +24,16 @@ defmodule Msgpax.Ext do
       defimpl Msgpax.Packer, for: RepByte do
         @rep_byte_ext_type 10
 
-        def pack(%RepByte{data: b, reps: reps}) do
+        def pack(%RepByte{data: byte, count: count}) do
           @rep_byte_ext_type
-          |> Msgpax.Ext.new(String.duplicate(<<b>>, reps))
+          |> Msgpax.Ext.new(String.duplicate(<<byte>>, count))
           |> Msgpax.Packer.pack()
         end
       end
 
   Now, we can pack `RepByte`s:
 
-      iex> packed = Msgpax.pack!(%RepByte{data: ?a, reps: 3})
+      iex> packed = Msgpax.pack!(%RepByte{data: ?a, count: 3})
       iex> Msgpax.unpack!(packed)
       #Msgpax.Ext<10, "aaa">
 
@@ -54,26 +54,24 @@ defmodule Msgpax.Ext do
         @behaviour Msgpax.Ext.Unpacker
         @rep_byte_ext_type 10
 
+        @impl true
         def unpack(%Msgpax.Ext{type: @rep_byte_ext_type, data: data}) do
           <<byte, _rest::binary>> = data
-          {:ok, %RepByte{data: byte, reps: byte_size(data)}}
+          {:ok, %RepByte{data: byte, count: byte_size(data)}}
         end
       end
 
   With this in place, we can now unpack a packed `RepByte` back to a `RepByte`
   struct:
 
-      iex> packed = Msgpax.pack!(%RepByte{data: ?a, reps: 3})
+      iex> packed = Msgpax.pack!(%RepByte{data: ?a, count: 3})
       iex> Msgpax.unpack!(packed, ext: MyExtUnpacker)
-      %RepByte{data: ?a, reps: 3}
+      %RepByte{data: ?a, count: 3}
 
   """
 
   @type type :: 0..127
-  @type t :: %__MODULE__{
-          type: type,
-          data: binary
-        }
+  @type t :: %__MODULE__{type: type, data: binary}
 
   defstruct [:type, :data]
 

@@ -1,12 +1,12 @@
 defmodule Msgpax do
   @moduledoc ~S"""
-  This module provides functions for serializing and de-serializing Elixir terms
+  This module provides functions for serializing and deserializing Elixir terms
   using the [MessagePack](http://msgpack.org/) format.
 
   ## Data conversion
 
   The following table shows how Elixir types are serialized to MessagePack types
-  and how MessagePack types are de-serialized back to Elixir types.
+  and how MessagePack types are deserialized back to Elixir types.
 
   Elixir                            | MessagePack   | Elixir
   --------------------------------- | ------------- | -------------
@@ -20,7 +20,7 @@ defmodule Msgpax do
   *N/A*<sup>1</sup>                 | -infinity     | `Msgpax.NegInfinity`<sup>2</sup>
   `:ok`                             | string        | `"ok"`
   `Atom`                            | string        | `"Elixir.Atom"`
-  `"str"`                           | string        | `"str"`
+  `"text"`                          | string        | `"text"`
   `"\xFF\xFF"`                      | string        | `"\xFF\xFF"`
   `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`<sup>3</sup>
   `%{foo: "bar"}`                   | map           | `%{"foo" => "bar"}`
@@ -40,7 +40,7 @@ defmodule Msgpax do
   alias __MODULE__.Unpacker
 
   @doc """
-  Serializes `term`.
+  Serializes the given `term`.
 
   This function returns iodata by default; if you want to force the result to be
   a binary, you can use `IO.iodata_to_binary/1` or use the `:iodata` option (see
@@ -126,12 +126,12 @@ defmodule Msgpax do
   end
 
   @doc """
-  De-serializes part of the given `iodata`.
+  Deserializes part of the given `iodata`.
 
   This function works like `unpack/2`, but instead of requiring the input to be
   a MessagePack-serialized term with nothing after that, it accepts leftover
-  bytes at the end of `iodata` and only de-serializes the part of the input that
-  makes sense. It returns `{:ok, term, rest}` if de-serialization is successful,
+  bytes at the end of `iodata` and only deserializes the part of the input that
+  makes sense. It returns `{:ok, term, rest}` if deserialization is successful,
   `{:error, exception}` otherwise (where `exception` is a `Msgpax.UnpackError`
   struct).
 
@@ -165,7 +165,7 @@ defmodule Msgpax do
   Works like `unpack_slice/2` but raises in case of error.
 
   This function works like `unpack_slice/2`, but returns just `{term, rest}` if
-  de-serialization is successful and raises a `Msgpax.UnpackError` exception if
+  deserialization is successful and raises a `Msgpax.UnpackError` exception if
   it's not.
 
   ## Examples
@@ -189,10 +189,10 @@ defmodule Msgpax do
   end
 
   @doc """
-  De-serializes the given `iodata`.
+  Deserializes the given `iodata`.
 
-  This function de-serializes the given `iodata` into an Elixir term. It returns
-  `{:ok, term}` if the de-serialization is successful, `{:error, exception}`
+  This function deserializes the given `iodata` into an Elixir term. It returns
+  `{:ok, term}` if the deserialization is successful, `{:error, exception}`
   otherwise, where `exception` is a `Msgpax.UnpackError` struct which can be
   raised or converted to a more human-friendly error message with
   `Exception.message/1`. See `Msgpax.UnpackError` for all the possible reasons
@@ -242,7 +242,7 @@ defmodule Msgpax do
   Works like `unpack/2`, but raises in case of errors.
 
   This function works like `unpack/2`, but it returns `term` (instead of `{:ok,
-  term}`) if de-serialization is successful, otherwise raises a
+  term}`) if deserialization is successful, otherwise raises a
   `Msgpax.UnpackError` exception.
 
   ## Example

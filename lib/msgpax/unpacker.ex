@@ -1,6 +1,6 @@
 defmodule Msgpax.UnpackError do
   @moduledoc """
-  Raised when there's an error in de-serializing some data into an Elixir term.
+  Raised when there's an error in deserializing some data into an Elixir term.
   """
 
   @type t :: %__MODULE__{
@@ -47,69 +47,51 @@ defmodule Msgpax.Unpacker do
     unpack(buffer, [], Map.new(options), [], 0, 1)
   end
 
-  primitives = %{
+  defunpack = fn clauses ->
+    for {formats, value} <- clauses, format <- formats do
+      defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
+        unpack_continue(rest, [unquote(value) | result], options, outer, index, count)
+      end
+    end
+  end
+
+  defunpack.(%{
     [quote(do: <<0xC0>>)] => nil,
     [quote(do: <<0xC2>>)] => false,
     [quote(do: <<0xC3>>)] => true,
-    # Strings
     [
+      # Strings
       quote(do: <<0b101::3, length::5, value::size(length)-bytes>>),
       quote(do: <<0xD9, length::8, value::size(length)-bytes>>),
-      quote(do: <<0xDA, length::16, value::size(length)-bytes>>),
-      quote(do: <<0xDB, length::32, value::size(length)-bytes>>),
-
       # Floats
       quote(do: <<0xCA, value::32-float>>),
       quote(do: <<0xCB, value::64-float>>),
-
       # Integers
       quote(do: <<0::1, value::7>>),
       quote(do: <<0xCC, value::8>>),
       quote(do: <<0xCD, value::16>>),
-      quote(do: <<0xCE, value::32>>),
-      quote(do: <<0xCF, value::64>>),
       quote(do: <<0xD0, value::8-signed>>),
-      quote(do: <<0xD1, value::16-signed>>),
-      quote(do: <<0xD2, value::32-signed>>),
-      quote(do: <<0xD3, value::64-signed>>)
+      quote(do: <<0xD1, value::16-signed>>)
     ] => quote(do: value),
     # Negative fixint
-    [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000),
-    # Extensions
-    [
-      quote(do: <<0xD4, type, content::1-bytes>>),
-      quote(do: <<0xD5, type, content::2-bytes>>),
-      quote(do: <<0xD6, type, content::4-bytes>>),
-      quote(do: <<0xD7, type, content::8-bytes>>),
-      quote(do: <<0xD8, type, content::16-bytes>>),
-      quote(do: <<0xC7, length::8, type, content::size(length)-bytes>>),
-      quote(do: <<0xC8, length::16, type, content::size(length)-bytes>>),
-      quote(do: <<0xC9, length::32, type, content::size(length)-bytes>>)
-    ] => quote(do: unpack_ext(type, content, var!(options))),
-    # Binaries
-    [
-      quote(do: <<0xC4, length::8, content::size(length)-bytes>>),
-      quote(do: <<0xC5, length::16, content::size(length)-bytes>>),
-      quote(do: <<0xC6, length::32, content::size(length)-bytes>>)
-    ] => quote(do: unpack_binary(content, var!(options))),
-    [
-      quote(do: <<0xCA, 0::1, 0xFF, 0::23>>),
-      quote(do: <<0xCB, 0::1, 0xFF, 0b111::3, 0::52>>)
-    ] => quote(do: unpack_float(Infinity, var!(options))),
-    [
-      quote(do: <<0xCA, 1::1, 0xFF, 0::23>>),
-      quote(do: <<0xCB, 1::1, 0xFF, 0b111::3, 0::52>>)
-    ] => quote(do: unpack_float(NegInfinity, var!(options))),
-    [
-      quote(do: <<0xCA, _sign::1, 0xFF, _fraction::23>>),
-      quote(do: <<0xCB, _sign::1, 0xFF, 0b111::3, _fraction::52>>)
-    ] => quote(do: unpack_float(NaN, var!(options)))
-  }
+    [quote(do: <<0b111::3, value::5>>)] => quote(do: value - 0b100000)
+  })
 
-  for {formats, value} <- primitives,
-      format <- formats do
+  maps = [
+    quote(do: <<0b1000::4, length::4>>),
+    quote(do: <<0xDE, length::16>>),
+    quote(do: <<0xDF, length::32>>)
+  ]
+
+  for format <- maps do
     defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      unpack_continue(rest, [unquote(value) | result], options, outer, index, count)
+      case var!(length, __MODULE__) do
+        0 ->
+          unpack_continue(rest, [%{} | result], options, outer, index, count)
+
+        length ->
+          unpack(rest, result, options, [:map, index, count | outer], 0, length * 2)
+      end
     end
   end
 
@@ -131,23 +113,48 @@ defmodule Msgpax.Unpacker do
     end
   end
 
-  maps = [
-    quote(do: <<0b1000::4, length::4>>),
-    quote(do: <<0xDE, length::16>>),
-    quote(do: <<0xDF, length::32>>)
-  ]
-
-  for format <- maps do
-    defp unpack(<<unquote(format), rest::bits>>, result, options, outer, index, count) do
-      case var!(length, __MODULE__) do
-        0 ->
-          unpack_continue(rest, [%{} | result], options, outer, index, count)
-
-        length ->
-          unpack(rest, result, options, [:map, index, count | outer], 0, length * 2)
-      end
-    end
-  end
+  defunpack.(%{
+    [
+      # Strings
+      quote(do: <<0xDA, length::16, value::size(length)-bytes>>),
+      quote(do: <<0xDB, length::32, value::size(length)-bytes>>),
+      # Integers
+      quote(do: <<0xCE, value::32>>),
+      quote(do: <<0xCF, value::64>>),
+      quote(do: <<0xD2, value::32-signed>>),
+      quote(do: <<0xD3, value::64-signed>>)
+    ] => quote(do: value),
+    # Extensions
+    [
+      quote(do: <<0xD4, type, content::1-bytes>>),
+      quote(do: <<0xD5, type, content::2-bytes>>),
+      quote(do: <<0xD6, type, content::4-bytes>>),
+      quote(do: <<0xD7, type, content::8-bytes>>),
+      quote(do: <<0xD8, type, content::16-bytes>>),
+      quote(do: <<0xC7, length::8, type, content::size(length)-bytes>>),
+      quote(do: <<0xC8, length::16, type, content::size(length)-bytes>>),
+      quote(do: <<0xC9, length::32, type, content::size(length)-bytes>>)
+    ] => quote(do: unpack_ext(type, content, var!(options))),
+    # Binaries
+    [
+      quote(do: <<0xC4, length::8, content::size(length)-bytes>>),
+      quote(do: <<0xC5, length::16, content::size(length)-bytes>>),
+      quote(do: <<0xC6, length::32, content::size(length)-bytes>>)
+    ] => quote(do: unpack_binary(content, var!(options))),
+    # NaN and ±infinity
+    [
+      quote(do: <<0xCA, 0::1, 0xFF, 0::23>>),
+      quote(do: <<0xCB, 0::1, 0xFF, 0b111::3, 0::52>>)
+    ] => quote(do: unpack_float(Infinity, var!(options))),
+    [
+      quote(do: <<0xCA, 1::1, 0xFF, 0::23>>),
+      quote(do: <<0xCB, 1::1, 0xFF, 0b111::3, 0::52>>)
+    ] => quote(do: unpack_float(NegInfinity, var!(options))),
+    [
+      quote(do: <<0xCA, _sign::1, 0xFF, _fraction::23>>),
+      quote(do: <<0xCB, _sign::1, 0xFF, 0b111::3, _fraction::52>>)
+    ] => quote(do: unpack_float(NaN, var!(options)))
+  })
 
   defp unpack(<<byte, _::bits>>, _result, _options, _outer, _index, _count) do
     throw({:invalid_format, byte})
