@@ -190,8 +190,8 @@ defmodule MsgpaxTest do
     assert {:ok, %Msgpax.Fragment{} = fragment} = Msgpax.pack_fragment("bar")
     assert Msgpax.pack!(%{foo: fragment}) |> Msgpax.unpack!() == %{"foo" => "bar"}
 
-    assert %Msgpax.Fragment{} = fragment = Msgpax.pack_fragment!("bar")
-    assert Msgpax.pack!(%{foo: fragment}) |> Msgpax.unpack!() == %{"foo" => "bar"}
+    assert %Msgpax.Fragment{} = fragment = Msgpax.pack_fragment!("foo")
+    assert Msgpax.pack!(%{bar: fragment}) |> Msgpax.unpack!() == %{"bar" => "foo"}
   end
 
   test "too big data" do

@@ -3,7 +3,7 @@ defmodule Msgpax.Fragment do
   Represents a fragment of MessagePack data.
   """
 
-  @opaque t() :: %__MODULE__{}
+  @opaque t() :: %__MODULE__{data: iodata}
 
   defstruct [:data]
 
