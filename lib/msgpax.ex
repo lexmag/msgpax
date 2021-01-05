@@ -134,10 +134,10 @@ defmodule Msgpax do
   message with `Exception.message/1`. See `Msgpax.PackError` for all the
   possible reasons for a packing error.
 
-  This is useful for optimization, for instance to avoid packing heavy terms
+  This is useful for optimization, for instance, to avoid packing heavy terms
   repetitively.
 
-  Another good use case for fragments would be data encapsulation. For example
+  Another good use case for fragments would be data encapsulation. For example,
   if we want to "interpolate" some MessagePack data into the payload without
   having to unpack and pack them.
 
@@ -164,8 +164,8 @@ defmodule Msgpax do
   @doc """
   Works as `pack_fragment/2`, but raises if there's an error.
 
-  This function works like `pack_fragment!/2`, except it returns the `term` (instead of
-  `{:ok, term}`) if the serialization is successful or raises a `Msgpax.PackError`
+  This function works like `pack_fragment!/2`, except it returns the `fragment` (instead of
+  `{:ok, fragment}`) if the serialization is successful or raises a `Msgpax.PackError`
   exception otherwise.
 
   ## Options

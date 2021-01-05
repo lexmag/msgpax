@@ -8,7 +8,7 @@ defmodule Msgpax.Fragment do
   defstruct [:data]
 
   @doc """
-  Initializes a `Msgpax.Fragment` by the input `data`.
+  Builds a `Msgpax.Fragment` from the given `packed_data`.
 
   ## Examples
 
