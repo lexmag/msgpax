@@ -1,4 +1,4 @@
-if Code.ensure_compiled?(Plug) do
+if Code.ensure_loaded?(Plug) do
   defmodule Msgpax.PlugParser do
     @moduledoc """
     A `Plug.Parsers` plug for parsing a MessagePack-encoded body.
@@ -39,7 +39,7 @@ if Code.ensure_compiled?(Plug) do
     def parse(%Plug.Conn{} = conn, "application", "msgpack", _params, {unpacker, options}) do
       case read_body(conn, options) do
         {:ok, body, conn} ->
-          {:ok, unpack_body(body, unpacker), conn}
+          {:ok, unpack(body, unpacker), conn}
 
         {:more, _partial_body, conn} ->
           {:error, :too_large, conn}
@@ -52,54 +52,43 @@ if Code.ensure_compiled?(Plug) do
 
     def init(options) do
       {unpacker, options} = Keyword.pop(options, :unpacker, Msgpax)
-
-      validate_unpacker!(unpacker)
-
-      {unpacker, options}
+      {validate_unpacker!(unpacker), options}
     end
 
-    defp unpack_body(body, unpacker) do
-      case apply_mfa_or_module(body, unpacker) do
-        data = %_{} -> %{"_msgpack" => data}
+    defp unpack(body, {module, function, extra_args}) do
+      try do
+        apply(module, function, [body | extra_args])
+      rescue
+        exception ->
+          raise Plug.Parsers.ParseError, exception: exception
+      else
+        %_{} = data -> %{"_msgpack" => data}
         data when is_map(data) -> data
         data -> %{"_msgpack" => data}
       end
-    rescue
-      exception ->
-        raise Plug.Parsers.ParseError, exception: exception
     end
 
-    defp apply_mfa_or_module(body, {module, function, extra_args}) do
-      apply(module, function, [body | extra_args])
-    end
-
-    defp apply_mfa_or_module(body, unpacker) do
-      unpacker.unpack!(body)
-    end
-
-    defp validate_unpacker!({module, function, extra_args})
+    defp validate_unpacker!({module, function, extra_args} = unpacker)
          when is_atom(module) and is_atom(function) and is_list(extra_args) do
       arity = length(extra_args) + 1
 
-      unless Code.ensure_compiled?(module) and function_exported?(module, function, arity) do
-        raise ArgumentError,
-              "invalid :unpacker option. Undefined function " <>
-                Exception.format_mfa(module, function, arity)
-      end
-    end
-
-    defp validate_unpacker!(unpacker) when is_atom(unpacker) do
-      unless Code.ensure_compiled?(unpacker) do
+      if Code.ensure_compiled(module) != {:module, module} do
         raise ArgumentError,
               "invalid :unpacker option. The module #{inspect(unpacker)} is not " <>
                 "loaded and could not be found"
       end
 
-      unless function_exported?(unpacker, :unpack!, 1) do
+      if not function_exported?(module, function, arity) do
         raise ArgumentError,
-              "invalid :unpacker option. The module #{inspect(unpacker)} must " <>
-                "implement unpack!/1"
+              "invalid :unpacker option. The module #{inspect(module)} must " <>
+                "implement #{function}/#{arity}"
       end
+
+      unpacker
+    end
+
+    defp validate_unpacker!(unpacker) when is_atom(unpacker) do
+      validate_unpacker!({unpacker, :unpack!, []})
     end
 
     defp validate_unpacker!(unpacker) do
