@@ -186,6 +186,14 @@ defmodule MsgpaxTest do
     assert Msgpax.pack([42, <<5::3>>]) == {:error, %PackError{reason: {:not_encodable, <<5::3>>}}}
   end
 
+  test "fragment" do
+    assert {:ok, %Msgpax.Fragment{} = fragment} = Msgpax.pack_fragment("bar", iodata: false)
+    assert Msgpax.pack!(%{foo: fragment}) |> Msgpax.unpack!() == %{"foo" => "bar"}
+
+    assert %Msgpax.Fragment{} = fragment = Msgpax.pack_fragment!("foo")
+    assert Msgpax.pack!([false, fragment]) |> Msgpax.unpack!() == [false, "foo"]
+  end
+
   test "too big data" do
     assert Msgpax.pack([true, -9_223_372_036_854_775_809]) ==
              {:error, %PackError{reason: {:too_big, -9_223_372_036_854_775_809}}}
