@@ -9,11 +9,12 @@ Msgpax is a fast and comprehensive library for serializing and deserializing Eli
 
 ## Features
 
-* Packing and unpacking Elixir terms via [`Msgpax.pack/1`][docs-msgpax-pack-1] and [`Msgpax.unpack/1`][docs-msgpax-unpack-1] (and their `!` bang variants).
+* Packing and unpacking Elixir terms via [`Msgpax.pack/1`][docs-msgpax-pack-1] and [`Msgpax.unpack/1`][docs-msgpax-unpack-1] (and their bang! variants).
 * Unpacking of partial slices of MessagePack-encoded terms via [`Msgpax.unpack_slice/1`][docs-msgpax-unpack_slice-1].
 * Support for "Binary" and "Extension" MessagePack types via [`Msgpax.Bin`][docs-msgpax-bin] and [`Msgpax.Ext`][docs-msgpax-ext], respectively.
 * Protocol-based packing through the [`Msgpax.Packer`][docs-msgpax-packer] protocol, that can be derived for user-defined structs.
-* A [`Plug.Parsers`][docs-plug-parsers] plug ([`Msgpax.PlugParser`][docs-msgpax-plug-parser]) to parse requests with MessagePack-encoded bodies.
+* A Plug parser ([`Msgpax.PlugParser`][docs-msgpax-plug-parser]) to parse requests with MessagePack-encoded bodies.
+* Support for MessagePack data fragment manipulation.
 
 A detailed table that shows the relationship between Elixir types and MessagePack types can be found in the [documentation for the `Msgpax` module][docs-msgpax].
 
@@ -43,4 +44,3 @@ Msgpax is released under [the ISC license](LICENSE).
 [docs-msgpax-bin]: http://hexdocs.pm/msgpax/Msgpax.Bin.html
 [docs-msgpax-ext]: http://hexdocs.pm/msgpax/Msgpax.Ext.html
 [docs-msgpax-plug-parser]: http://hexdocs.pm/msgpax/Msgpax.PlugParser.html
-[docs-plug-parsers]: http://hexdocs.pm/msgpax/Plug.Parsers.html

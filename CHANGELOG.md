@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.3.0 – 2021-02-05
+
+* Introduced support for MessagePack data fragment manipulation.
+* Optimized unpacking even more for typical usage scenarios.
+* Fixed error raising in `Msgpax.pack/1` when protocol `Msgpax.Packer` is not implemented for the given data types.
+* Complete IEEE 754 support: added NaN and ±infinity.
+
 ## v2.2.4 – 2019-07-23
 
 * Optimized list and map packing.

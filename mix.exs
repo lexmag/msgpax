@@ -2,7 +2,7 @@ defmodule Msgpax.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/lexmag/msgpax"
-  @version "2.2.4"
+  @version "2.3.0"
 
   def project do
     [

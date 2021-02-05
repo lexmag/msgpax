@@ -11,7 +11,7 @@ defmodule Msgpax.Bin do
   deserialized to Elixir binaries by default) to `Msgpax.Bin` structs.
   """
 
-  @type t :: %__MODULE__{data: binary}
+  @type t() :: %__MODULE__{data: binary}
 
   defstruct [:data]
 
