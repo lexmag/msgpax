@@ -105,14 +105,14 @@ defprotocol Msgpax.Packer do
   def pack(term)
 
   @doc """
-  Returns serizalied NaN in 64-bit format.
+  Returns serialized NaN in 64-bit format.
   """
   Kernel.def(pack_nan(), do: <<0xCB, -1::64>>)
 
   require Bitwise
 
   @doc """
-  Returns serizalied infinity in 64-bit format.
+  Returns serialized infinity in 64-bit format.
   """
   Kernel.def pack_infinity(:positive) do
     <<0xCB, 0::1, -1::11, 0::52>>
