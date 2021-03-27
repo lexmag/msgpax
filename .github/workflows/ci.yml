@@ -1,39 +1,45 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
   format:
-    name: Code formatting
-    runs-on: ubuntu-latest
+    name: Code linting
+    runs-on: ubuntu-18.04
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install OTP and Elixir
-        uses: actions/setup-elixir@v1
+      - name: Set up Elixir environment
+        uses: erlef/setup-elixir@v1
         with:
-          otp-version: 20.3
-          elixir-version: 1.7
+          otp-version: 23
+          elixir-version: 1.11
 
-      - name: Check format
+      - name: Check unused dependencies
+        run: mix deps.get && mix deps.unlock --check-unused
+
+      - name: Check formatting
         run: mix format --check-formatted
+
+      - name: Check compilation warnings
+        run: mix compile --warnings-as-errors
 
   test:
     name: Test suite
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04
 
     strategy:
       matrix:
-        pair:
-          - erlang: 18.3
+        versions:
+          - otp: 18.3
             elixir: 1.4
-          - erlang: 19.3
-            elixir: 1.5
-          - erlang: 20.3
-            elixir: 1.6
-          - erlang: 21.0
-            elixir: 1.7
+          - otp: 23
+            elixir: 1.11
 
     env:
       MIX_ENV: test
@@ -41,14 +47,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install OTP and Elixir
-        uses: actions/setup-elixir@v1
+      - name: Set up Elixir environment
+        uses: erlef/setup-elixir@v1
         with:
-          otp-version: ${{ matrix.pair.erlang }}
-          elixir-version: ${{ matrix.pair.elixir }}
+          elixir-version: ${{ matrix.versions.elixir }}
+          otp-version: ${{ matrix.versions.otp }}
 
       - name: Install dependencies
-        run: mix deps.get
+        run: mix deps.get --only test
 
       - name: Run tests
         run: mix test
