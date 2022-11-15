@@ -1,6 +1,8 @@
 defmodule Msgpax.ExtTest do
   use Msgpax.Case, async: true
 
+  doctest Msgpax.Ext, except: [:moduledoc]
+
   alias Msgpax.UnpackError
 
   defmodule Sample do
