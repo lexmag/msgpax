@@ -29,7 +29,7 @@ defmodule Msgpax.Fragment do
     import Inspect.Algebra
 
     def inspect(%{data: data}, options) do
-      concat(["#Msgpax.Fragment<", Inspect.BitString.inspect(data, options), ">"])
+      concat(["#Msgpax.Fragment<", to_doc(data, options), ">"])
     end
   end
 end
