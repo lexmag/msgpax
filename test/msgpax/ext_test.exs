@@ -24,7 +24,10 @@ defmodule Msgpax.ExtTest do
 
     defimpl Msgpax.Packer do
       def pack(%Sample{seed: seed, size: size}) do
-        Msgpax.Ext.new(42, String.duplicate(seed, size))
+        module = if is_list(seed), do: List, else: String
+
+        42
+        |> Msgpax.Ext.new(module.duplicate(seed, size))
         |> @protocol.Msgpax.Ext.pack()
       end
     end
@@ -84,6 +87,11 @@ defmodule Msgpax.ExtTest do
   test "empty options" do
     output = Msgpax.Ext.new(42, "G")
     assert_format Sample.new("G", 1), <<0xD4, 42, ?G>>, output
+  end
+
+  test "iodata input" do
+    output = Msgpax.Ext.new(42, "HH")
+    assert_format Sample.new('H', 2), <<0xD5, 42, ?H>>, output
   end
 
   test "broken ext" do

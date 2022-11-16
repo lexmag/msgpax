@@ -260,7 +260,7 @@ defimpl Msgpax.Packer, for: [Msgpax.Ext, Msgpax.ReservedExt] do
   end
 
   defp format(data) do
-    size = byte_size(data)
+    size = IO.iodata_length(data)
 
     cond do
       size == 1 -> 0xD4
