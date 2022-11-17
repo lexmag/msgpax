@@ -2,7 +2,7 @@ defmodule Msgpax.Mixfile do
   use Mix.Project
 
   @source_url "https://github.com/lexmag/msgpax"
-  @version "2.3.0"
+  @version "2.3.1"
 
   def project do
     [
@@ -26,13 +26,13 @@ defmodule Msgpax.Mixfile do
   def application(), do: []
 
   defp description() do
-    "A fast and comprehensive library for serializing " <>
+    "A high-performance and comprehensive library for serializing " <>
       "and deserializing Elixir terms using the MessagePack format."
   end
 
   defp package() do
     [
-      maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
+      maintainers: ["Aleksei Magusev"],
       licenses: ["ISC"],
       links: %{"GitHub" => @source_url}
     ]
@@ -40,7 +40,7 @@ defmodule Msgpax.Mixfile do
 
   defp deps() do
     [
-      {:ex_doc, "~> 0.20.0", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.20", only: :dev, runtime: false},
       {:plug, "~> 1.0", optional: true}
     ]
   end

@@ -15,25 +15,25 @@ defmodule Msgpax do
   `false`                           | boolean       | `false`
   `-1`                              | integer       | `-1`
   `1.25`                            | float         | `1.25`
-  *N/A*<sup>1</sup>                 | NaN           | `Msgpax.NaN`<sup>2</sup>
-  *N/A*<sup>1</sup>                 | +infinity     | `Msgpax.Infinity`<sup>2</sup>
-  *N/A*<sup>1</sup>                 | -infinity     | `Msgpax.NegInfinity`<sup>2</sup>
+  *N/A*¹                            | NaN           | `Msgpax.NaN`²
+  *N/A*¹                            | +infinity     | `Msgpax.Infinity`²
+  *N/A*¹                            | -infinity     | `Msgpax.NegInfinity`²
   `:ok`                             | string        | `"ok"`
   `Atom`                            | string        | `"Elixir.Atom"`
   `"text"`                          | string        | `"text"`
   `"\xFF\xFF"`                      | string        | `"\xFF\xFF"`
-  `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`<sup>3</sup>
+  `#Msgpax.Bin<"\xFF">`             | binary        | `"\xFF"`³
   `%{foo: "bar"}`                   | map           | `%{"foo" => "bar"}`
   `[foo: "bar"]`                    | map           | `%{"foo" => "bar"}`
   `[1, true]`                       | array         | `[1, true]`
   `#Msgpax.Ext<4, "02:12">`         | extension     | `#Msgpax.Ext<4, "02:12">`
   `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
-  <sup>1</sup>`Msgpax.Packer` provides helper functions to facilitate the serialization of natively unsupported data types.
+  ¹ `Msgpax.Packer` provides helper functions to facilitate the serialization of natively unsupported data types.
 
-  <sup>2</sup>NaN and ±infinity are not enabled by default. See `unpack/2` for for more information.
+  ² NaN and ±infinity are not enabled by default. See `unpack/2` for for more information.
 
-  <sup>3</sup>To deserialize back to `Msgpax.Bin` structs see the `unpack/2` options.
+  ³ To deserialize back to `Msgpax.Bin` structs see the `unpack/2` options.
   """
 
   alias __MODULE__.Packer
