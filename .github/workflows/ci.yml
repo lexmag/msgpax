@@ -7,27 +7,9 @@ on:
   pull_request:
 
 jobs:
-  format:
-    name: Code linting
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Elixir environment
-        uses: erlef/setup-beam@v1
-        with:
-          otp-version: 24
-          elixir-version: 1.13
-
-      - name: Check unused dependencies
-        run: mix deps.get && mix deps.unlock --check-unused
-
-      - name: Check formatting
-        run: mix format --check-formatted
-
-      - name: Check compilation warnings
-        run: mix compile --warnings-as-errors
+  lint:
+    name: Lint
+    uses: lexmag/elixir-actions/.github/workflows/lint.yml@v1
 
   test:
     name: Test suite
