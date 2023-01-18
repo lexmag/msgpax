@@ -1,5 +1,5 @@
 defimpl Msgpax.Packer, for: DateTime do
-  use Bitwise
+  import Bitwise
 
   def pack(datetime) do
     -1
