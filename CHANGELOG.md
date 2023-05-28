@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.4.0 – 2023-05-27
+
+  * Dropped support for Elixir versions before 1.6.
+  * Fixed a deprecation warning from `Bitwise`.
+
 ## v2.3.1 – 2022-11-16
 
   * Added support for iolists in `Msgpax.Ext`.
