@@ -316,3 +316,19 @@ defimpl Msgpax.Packer, for: Any do
     raise Protocol.UndefinedError, protocol: @protocol, value: term
   end
 end
+
+defimpl Msgpax.Packer, for: Decimal do
+  def pack(value) do
+    decimal = Decimal
+
+    decimal.to_string(value)
+    |> @protocol.BitString.pack()
+  end
+end
+
+defimpl Msgpax.Packer, for: Date do
+  def pack(value) do
+    Date.to_iso8601(value)
+    |> @protocol.BitString.pack()
+  end
+end
