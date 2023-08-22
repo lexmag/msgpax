@@ -1,10 +1,10 @@
 defimpl Msgpax.Packer, for: DateTime do
   import Bitwise
 
-  def pack(datetime) do
+  def pack(datetime, options) do
     -1
     |> Msgpax.ReservedExt.new(build_data(datetime))
-    |> @protocol.Msgpax.ReservedExt.pack()
+    |> @protocol.Msgpax.ReservedExt.pack(options)
   end
 
   defp build_data(datetime) do
