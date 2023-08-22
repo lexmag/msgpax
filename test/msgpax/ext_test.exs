@@ -23,12 +23,12 @@ defmodule Msgpax.ExtTest do
     end
 
     defimpl Msgpax.Packer do
-      def pack(%Sample{seed: seed, size: size}) do
+      def pack(%Sample{seed: seed, size: size}, options) do
         module = if is_list(seed), do: List, else: String
 
         42
         |> Msgpax.Ext.new(module.duplicate(seed, size))
-        |> @protocol.Msgpax.Ext.pack()
+        |> @protocol.Msgpax.Ext.pack(options)
       end
     end
   end

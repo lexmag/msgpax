@@ -1,5 +1,13 @@
 # Changelog
 
+## Next release
+  * Upgraded `Msgpax.Packer` protocol so that the pack function can receive options.
+
+__Breaking changes:__
+
+  * `Msgpax.Packer.pack/1` changed to `Msgpax.Packer.pack/2`, so all protocol
+    implementations should be updated. See `Msgpax.defimpl/3` for examples.
+
 ## v2.4.0 – 2023-05-27
 
   * Dropped support for Elixir versions before 1.6.

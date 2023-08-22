@@ -22,7 +22,7 @@ defmodule Msgpax.Fragment do
   end
 
   defimpl Msgpax.Packer do
-    def pack(%{data: data}), do: data
+    def pack(%{data: data}, _options), do: data
   end
 
   defimpl Inspect do
