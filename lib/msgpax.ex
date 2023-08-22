@@ -57,6 +57,7 @@ defmodule Msgpax do
     * `:iodata` - (boolean) if `true`, this function returns the encoded term as
       iodata, if `false` as a binary. Defaults to `true`.
 
+      Any other options are passed to `Msgpax.Packer.pack/2`.
   ## Examples
 
       iex> {:ok, packed} = Msgpax.pack("foo")
@@ -72,10 +73,10 @@ defmodule Msgpax do
   """
   @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t() | Exception.t()}
   def pack(term, options \\ []) when is_list(options) do
-    iodata? = Keyword.get(options, :iodata, true)
+    {iodata?, remaining_options} = Keyword.pop(options, :iodata, true)
 
     try do
-      Packer.pack(term)
+      Packer.pack(term, remaining_options)
     catch
       :throw, reason ->
         {:error, %Msgpax.PackError{reason: reason}}
@@ -329,6 +330,78 @@ defmodule Msgpax do
 
       {:error, exception} ->
         raise exception
+    end
+  end
+
+  @doc """
+  Works similarly to `Kernel.defimpl`, but introduces a default implementation
+  of the `pack/2` function that delegates the call to `pack/1`.
+
+  This macro is specifically designed for projects upgrading from versions of
+  `Msgpax` where the protocol required the implementation of `pack/1`.
+
+  > #### `use Msgpax` {: .info}
+  >
+  > When you `use Msgpax`, `Kernel.defimpl/2` and `Kernel.defimpl/3` are
+  > replaced by their `Msgpax` counterparts.
+
+  ## Example
+  Suppose you had a custom type that implements the `Msgpax.Packer.pack/1` version:
+
+      defmodule MyCustomType do
+        defstruct [:foo, :bar]
+
+        defimpl Msgpax.Packer do
+          def pack(%MyStructure{foo: foo}), do: []
+        end
+      end
+
+  You can migrate to the new protocol by simply adding `use Msgpax`:
+
+      defmodule MyCustomType do
+        use Msgpax
+        defstruct [:foo, :bar]
+
+        defimpl Msgpax.Packer do
+          def pack(%MyStructure{foo: foo}), do: []
+        end
+      end
+
+  """
+  defmacro defimpl(name, opts, do_block \\ []) do
+    protocol = Macro.expand(name, __CALLER__)
+
+    if protocol != Msgpax.Packer do
+      arity = (do_block == [] && "2") || "3"
+
+      raise "`Msgpax.defimpl/#{arity}` is not supported for protocols other than `Msgpax.Packer`: got `#{Macro.inspect_atom(:literal, protocol)}`"
+    end
+
+    for_module = Keyword.get(opts, :for, __CALLER__.module)
+    do_block = Keyword.get(opts, :do, do_block)
+
+    catch_all_pack_2 =
+      case Macro.path(do_block, &match?({:def, _, [{:pack, _, [_arg1]} | _]}, &1)) do
+        nil ->
+          []
+
+        _ ->
+          quote do: def(pack(term, _options), do: @for.pack(term))
+      end
+
+    quote do
+      Kernel.defimpl Msgpax.Packer, for: unquote(for_module) do
+        unquote(do_block)
+        unquote(catch_all_pack_2)
+      end
+    end
+  end
+
+  @doc false
+  defmacro __using__(_opts) do
+    quote do
+      import Kernel, except: [defimpl: 2, defimpl: 3]
+      import unquote(__MODULE__), only: [defimpl: 2, defimpl: 3]
     end
   end
 end

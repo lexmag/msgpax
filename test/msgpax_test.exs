@@ -26,6 +26,37 @@ defmodule MsgpaxTest do
     defstruct [:name]
   end
 
+  test "Msgpax.defimpl/3 injects catch all pack/2" do
+    defmodule Sample do
+      use Msgpax
+      alias Msgpax.Packer
+
+      defstruct [:name]
+
+      defimpl Packer do
+        def pack(%{name: name}), do: [name]
+      end
+    end
+
+    assert function_exported?(Msgpax.Packer.MsgpaxTest.Sample, :pack, 1)
+    assert function_exported?(Msgpax.Packer.MsgpaxTest.Sample, :pack, 2)
+  end
+
+  test "Msgpax.defimpl/2 injects catch all pack/2" do
+    defmodule RemoteSample do
+      defstruct [:name]
+    end
+
+    use Msgpax
+
+    defimpl Msgpax.Packer, for: RemoteSample do
+      def pack(%{name: name}), do: [name]
+    end
+
+    assert function_exported?(Msgpax.Packer.MsgpaxTest.RemoteSample, :pack, 1)
+    assert function_exported?(Msgpax.Packer.MsgpaxTest.RemoteSample, :pack, 2)
+  end
+
   test "fixstring" do
     assert_format build_string(0), <<160>>
     assert_format build_string(31), <<191>>
