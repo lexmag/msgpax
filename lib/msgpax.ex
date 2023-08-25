@@ -26,7 +26,8 @@ defmodule Msgpax do
   `%{foo: "bar"}`                   | map           | `%{"foo" => "bar"}`
   `[foo: "bar"]`                    | map           | `%{"foo" => "bar"}`
   `[1, true]`                       | array         | `[1, true]`
-  `#Msgpax.Ext<4, "02:12">`         | extension     | `#Msgpax.Ext<4, "02:12">`
+  `#Msgpax.Ext0<"02:12">`⁴          | extension     | `#Msgpax.Ext0<"02:12">`
+  `#Date<2017-12-06>`⁵              | extension     | `#Date<2017-12-06>`
   `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
   ¹ `Msgpax.Packer` provides helper functions to facilitate the serialization of natively unsupported data types.
@@ -34,6 +35,8 @@ defmodule Msgpax do
   ² NaN and ±infinity are not enabled by default. See `unpack/2` for for more information.
 
   ³ To deserialize back to `Msgpax.Bin` structs see the `unpack/2` options.
+
+  ⁴ There are 128 extension ranging from `Msgpax.Ext0` to `Msgpax.Ext127`
   """
 
   alias __MODULE__.Packer
@@ -210,15 +213,19 @@ defmodule Msgpax do
       {:error, %Msgpax.UnpackError{reason: {:invalid_format, 163}}}
 
   """
-  @spec unpack_slice(iodata, Keyword.t()) :: {:ok, any, binary} | {:error, Msgpax.UnpackError.t()}
+  @spec unpack_slice(iodata, Keyword.t()) ::
+          {:ok, any, binary} | {:error, Msgpax.UnpackError.t() | Exception.t()}
   def unpack_slice(iodata, options \\ []) when is_list(options) do
     try do
       iodata
       |> IO.iodata_to_binary()
-      |> Unpacker.unpack(options)
+      |> Unpacker.Helper.unpack(options)
     catch
       :throw, reason ->
         {:error, %Msgpax.UnpackError{reason: reason}}
+
+      :error, %Protocol.UndefinedError{protocol: Msgpax.Unpacker} = exception ->
+        {:error, exception}
     else
       {value, rest} ->
         {:ok, value, rest}
@@ -267,12 +274,11 @@ defmodule Msgpax do
     * `:binary` - (boolean) if `true`, then binaries are decoded as `Msgpax.Bin`
       structs instead of plain Elixir binaries. Defaults to `false`.
 
-    * `:ext` - (module) a module that implements the `Msgpax.Ext.Unpacker`
-      behaviour. For more information, see the docs for `Msgpax.Ext.Unpacker`.
-
     * `:nonfinite_floats` - (boolean) if `true`, deserializes NaN and ±infinity to
       "signalling" atoms (see the "Data conversion" section), otherwise errors.
       Defaults to `false`.
+
+    Any other options are passed to `Msgpax.Unpacker.unpack/2`.
 
   ## Examples
 
@@ -288,7 +294,8 @@ defmodule Msgpax do
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
-  @spec unpack(iodata, Keyword.t()) :: {:ok, any} | {:error, Msgpax.UnpackError.t()}
+  @spec unpack(iodata, Keyword.t()) ::
+          {:ok, any} | {:error, Msgpax.UnpackError.t() | Exception.t()}
   def unpack(iodata, options \\ []) do
     case unpack_slice(iodata, options) do
       {:ok, value, <<>>} ->
@@ -330,78 +337,6 @@ defmodule Msgpax do
 
       {:error, exception} ->
         raise exception
-    end
-  end
-
-  @doc """
-  Works similarly to `Kernel.defimpl`, but introduces a default implementation
-  of the `pack/2` function that delegates the call to `pack/1`.
-
-  This macro is specifically designed for projects upgrading from versions of
-  `Msgpax` where the protocol required the implementation of `pack/1`.
-
-  > #### `use Msgpax` {: .info}
-  >
-  > When you `use Msgpax`, `Kernel.defimpl/2` and `Kernel.defimpl/3` are
-  > replaced by their `Msgpax` counterparts.
-
-  ## Example
-  Suppose you had a custom type that implements the `Msgpax.Packer.pack/1` version:
-
-      defmodule MyCustomType do
-        defstruct [:foo, :bar]
-
-        defimpl Msgpax.Packer do
-          def pack(%MyStructure{foo: foo}), do: []
-        end
-      end
-
-  You can migrate to the new protocol by simply adding `use Msgpax`:
-
-      defmodule MyCustomType do
-        use Msgpax
-        defstruct [:foo, :bar]
-
-        defimpl Msgpax.Packer do
-          def pack(%MyStructure{foo: foo}), do: []
-        end
-      end
-
-  """
-  defmacro defimpl(name, opts, do_block \\ []) do
-    protocol = Macro.expand(name, __CALLER__)
-
-    if protocol != Msgpax.Packer do
-      arity = (do_block == [] && "2") || "3"
-
-      raise "`Msgpax.defimpl/#{arity}` is not supported for protocols other than `Msgpax.Packer`: got `#{Macro.inspect_atom(:literal, protocol)}`"
-    end
-
-    for_module = Keyword.get(opts, :for, __CALLER__.module)
-    do_block = Keyword.get(opts, :do, do_block)
-
-    catch_all_pack_2 =
-      case Macro.path(do_block, &match?({:def, _, [{:pack, _, [_arg1]} | _]}, &1)) do
-        nil ->
-          []
-
-        _ ->
-          quote do: def(pack(term, _options), do: @for.pack(term))
-      end
-
-    quote do
-      Kernel.defimpl Msgpax.Packer, for: unquote(for_module) do
-        unquote(do_block)
-        unquote(catch_all_pack_2)
-      end
-    end
-  end
-
-  @doc false
-  defmacro __using__(_opts) do
-    quote do
-      import Kernel, except: [defimpl: 2, defimpl: 3]
-      import unquote(__MODULE__), only: [defimpl: 2, defimpl: 3]
     end
   end
 end

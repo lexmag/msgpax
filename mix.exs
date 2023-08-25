@@ -18,7 +18,12 @@ defmodule Msgpax.Mixfile do
         main: "Msgpax",
         source_ref: "v#{@version}",
         source_url: @source_url,
-        extras: ["CHANGELOG.md"]
+        extras: ["CHANGELOG.md"],
+        groups_for_modules: [
+          "Default Extensions": [
+            Msgpax.Ext.Date
+          ]
+        ]
       ]
     ]
   end
