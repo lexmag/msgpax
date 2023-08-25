@@ -8,7 +8,7 @@ defmodule Msgpax.UnpackError do
             {:excess_bytes, binary}
             | {:invalid_format, integer}
             | :incomplete
-            | {:ext_unpack_failure, module, Msgpax.Ext.t()}
+            | {:ext_unpack_failure, module, Msgpax.Unpacker.t()}
             | {:nonfinite_float, atom}
         }
 
@@ -34,7 +34,48 @@ defmodule Msgpax.UnpackError do
   end
 end
 
-defmodule Msgpax.Unpacker do
+defprotocol Msgpax.Unpacker do
+  @moduledoc """
+  The `Msgpax.Unpacker` protocol is responsible for deserializing any `Msgpax`
+  extension. There are 128 possible extensions, each of which is mapped to a
+  struct: `Msgpax.Ext0`, `Msgpax.Ext1`, ..., `Msgpax.Ext127`.
+
+  The `Msgpax.Packer` converts the extension data into one of these structs and
+  then serializes it.
+
+  Therefore, in order to deserialize an extension, we need to implement this
+  protocol for its corresponding struct.
+
+  ### Example
+  Below is Msgpax's default implementation for the `Date` type using extension
+  type 101.
+
+        defimpl Msgpax.Packer, for: Date do
+          def pack(%{year: year, month: month, day: day}, options) do
+            101
+            |> Msgpax.Ext.new(<<year::15, month::4, day::5>>) ## <-- returns %Msgpax.Ext101{}
+            |> @protocol.pack(options)
+          end
+        end
+
+        defimpl Msgpax.Unpacker, for: Msgpax.Ext101 do
+          def unpack(%{data: <<year::15, month::4, day::5>>}, _options) do
+            with {:error, _reason} <- Date.new(year, month, day), do: :error
+          end
+
+          def unpack(_ext_101, _options), do: :error
+        end
+
+  """
+
+  @doc """
+  This function deserializes one of the 128 possible extensions
+  into an elixir term.
+  """
+  def unpack(term, options)
+end
+
+defmodule Msgpax.Unpacker.Helper do
   @moduledoc false
 
   alias Msgpax.{
@@ -43,6 +84,7 @@ defmodule Msgpax.Unpacker do
     NegInfinity
   }
 
+  @doc false
   def unpack(<<buffer::bits>>, options) do
     unpack(buffer, [], Map.new(options), [], 0, 1)
   end
@@ -211,24 +253,20 @@ defmodule Msgpax.Unpacker do
       type
       |> Kernel.-(256)
       |> Msgpax.ReservedExt.new(content)
-      |> unpack_ext(%{ext: Msgpax.ReservedExt})
+      |> unpack_ext(options)
     end
   end
 
   @compile {:inline, [unpack_ext: 2]}
 
-  defp unpack_ext(struct, %{ext: module}) when is_atom(module) do
-    case module.unpack(struct) do
+  defp unpack_ext(%module{} = struct, options) do
+    case Msgpax.Unpacker.unpack(struct, Enum.into(options, [])) do
       {:ok, result} ->
         result
 
       :error ->
         throw({:ext_unpack_failure, module, struct})
     end
-  end
-
-  defp unpack_ext(struct, _options) do
-    struct
   end
 
   @compile {:inline, [build_collection: 3]}
