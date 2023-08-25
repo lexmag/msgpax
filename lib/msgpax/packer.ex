@@ -102,7 +102,7 @@ defprotocol Msgpax.Packer do
 
   It returns an iodata result.
   """
-  def pack(term)
+  def pack(term, options)
 
   @doc """
   Returns serialized NaN in 64-bit format.
@@ -124,23 +124,23 @@ defprotocol Msgpax.Packer do
 end
 
 defimpl Msgpax.Packer, for: Atom do
-  def pack(nil), do: [0xC0]
-  def pack(false), do: [0xC2]
-  def pack(true), do: [0xC3]
+  def pack(nil, _options), do: [0xC0]
+  def pack(false, _options), do: [0xC2]
+  def pack(true, _options), do: [0xC3]
 
-  def pack(atom) do
+  def pack(atom, opts) do
     atom
     |> Atom.to_string()
-    |> @protocol.BitString.pack()
+    |> @protocol.BitString.pack(opts)
   end
 end
 
 defimpl Msgpax.Packer, for: BitString do
-  def pack(binary) when is_binary(binary) do
+  def pack(binary, _options) when is_binary(binary) do
     [format(binary) | binary]
   end
 
-  def pack(bits) do
+  def pack(bits, _options) do
     throw({:not_encodable, bits})
   end
 
@@ -162,15 +162,15 @@ defimpl Msgpax.Packer, for: Map do
     @protocol.Any.deriving(module, struct, options)
   end
 
-  def pack(map) do
-    [format(map) | map |> Map.to_list() |> pack([])]
+  def pack(map, options) do
+    [format(map) | map |> Map.to_list() |> do_pack([], options)]
   end
 
-  defp pack([{key, value} | rest], result) do
-    pack(rest, [@protocol.pack(key), @protocol.pack(value) | result])
+  defp do_pack([{key, value} | rest], result, opts) do
+    do_pack(rest, [@protocol.pack(key, opts), @protocol.pack(value, opts) | result], opts)
   end
 
-  defp pack([], result), do: result
+  defp do_pack([], result, _opts), do: result
 
   defp format(map) do
     length = map_size(map)
@@ -185,15 +185,15 @@ defimpl Msgpax.Packer, for: Map do
 end
 
 defimpl Msgpax.Packer, for: List do
-  def pack(list) do
-    [format(list) | list |> Enum.reverse() |> pack([])]
+  def pack(list, options) do
+    [format(list) | list |> Enum.reverse() |> do_pack([], options)]
   end
 
-  defp pack([item | rest], result) do
-    pack(rest, [@protocol.pack(item) | result])
+  defp do_pack([item | rest], result, opts) do
+    do_pack(rest, [@protocol.pack(item, opts) | result], opts)
   end
 
-  defp pack([], result), do: result
+  defp do_pack([], result, _opts), do: result
 
   defp format(list) do
     length = length(list)
@@ -208,13 +208,13 @@ defimpl Msgpax.Packer, for: List do
 end
 
 defimpl Msgpax.Packer, for: Float do
-  def pack(num) do
+  def pack(num, _options) do
     <<0xCB, num::64-float>>
   end
 end
 
 defimpl Msgpax.Packer, for: Integer do
-  def pack(int) when int < 0 do
+  def pack(int, _options) when int < 0 do
     cond do
       int >= -32 -> [0x100 + int]
       int >= -128 -> [0xD0, 0x100 + int]
@@ -225,7 +225,7 @@ defimpl Msgpax.Packer, for: Integer do
     end
   end
 
-  def pack(int) do
+  def pack(int, _options) do
     cond do
       int < 128 -> [int]
       int < 256 -> [0xCC, int]
@@ -238,7 +238,7 @@ defimpl Msgpax.Packer, for: Integer do
 end
 
 defimpl Msgpax.Packer, for: Msgpax.Bin do
-  def pack(%{data: data}) when is_binary(data), do: [format(data) | data]
+  def pack(%{data: data}, _options) when is_binary(data), do: [format(data) | data]
 
   defp format(binary) do
     size = byte_size(binary)
@@ -248,30 +248,6 @@ defimpl Msgpax.Packer, for: Msgpax.Bin do
       size < 0x10000 -> <<0xC5, size::16>>
       size < 0x100000000 -> <<0xC6, size::32>>
       true -> throw({:too_big, binary})
-    end
-  end
-end
-
-defimpl Msgpax.Packer, for: [Msgpax.Ext, Msgpax.ReservedExt] do
-  require Bitwise
-
-  def pack(%_{type: type, data: data}) do
-    [format(data), Bitwise.band(256 + type, 255) | data]
-  end
-
-  defp format(data) do
-    size = IO.iodata_length(data)
-
-    cond do
-      size == 1 -> 0xD4
-      size == 2 -> 0xD5
-      size == 4 -> 0xD6
-      size == 8 -> 0xD7
-      size == 16 -> 0xD8
-      size < 256 -> [0xC7, size]
-      size < 0x10000 -> <<0xC8, size::16>>
-      size < 0x100000000 -> <<0xC9, size::32>>
-      true -> throw({:too_big, data})
     end
   end
 end
@@ -304,15 +280,15 @@ defimpl Msgpax.Packer, for: Any do
 
     quote do
       defimpl unquote(@protocol), for: unquote(module) do
-        def pack(struct) do
+        def pack(struct, options) do
           unquote(extractor)
-          |> @protocol.Map.pack()
+          |> @protocol.Map.pack(options)
         end
       end
     end
   end
 
-  def pack(term) do
+  def pack(term, _options) do
     raise Protocol.UndefinedError, protocol: @protocol, value: term
   end
 end

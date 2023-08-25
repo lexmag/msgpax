@@ -26,7 +26,8 @@ defmodule Msgpax do
   `%{foo: "bar"}`                   | map           | `%{"foo" => "bar"}`
   `[foo: "bar"]`                    | map           | `%{"foo" => "bar"}`
   `[1, true]`                       | array         | `[1, true]`
-  `#Msgpax.Ext<4, "02:12">`         | extension     | `#Msgpax.Ext<4, "02:12">`
+  `#Msgpax.Ext0<"02:12">`⁴          | extension     | `#Msgpax.Ext0<"02:12">`
+  `#Date<2017-12-06>`               | extension     | `#Date<2017-12-06>`
   `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
   ¹ `Msgpax.Packer` provides helper functions to facilitate the serialization of natively unsupported data types.
@@ -34,6 +35,8 @@ defmodule Msgpax do
   ² NaN and ±infinity are not enabled by default. See `unpack/2` for for more information.
 
   ³ To deserialize back to `Msgpax.Bin` structs see the `unpack/2` options.
+
+  ⁴ There are 128 extension ranging from `Msgpax.Ext0` to `Msgpax.Ext127`
   """
 
   alias __MODULE__.Packer
@@ -57,6 +60,7 @@ defmodule Msgpax do
     * `:iodata` - (boolean) if `true`, this function returns the encoded term as
       iodata, if `false` as a binary. Defaults to `true`.
 
+      Any other options are passed to `Msgpax.Packer.pack/2`.
   ## Examples
 
       iex> {:ok, packed} = Msgpax.pack("foo")
@@ -72,10 +76,10 @@ defmodule Msgpax do
   """
   @spec pack(term, Keyword.t()) :: {:ok, iodata} | {:error, Msgpax.PackError.t() | Exception.t()}
   def pack(term, options \\ []) when is_list(options) do
-    iodata? = Keyword.get(options, :iodata, true)
+    {iodata?, remaining_options} = Keyword.pop(options, :iodata, true)
 
     try do
-      Packer.pack(term)
+      Packer.pack(term, remaining_options)
     catch
       :throw, reason ->
         {:error, %Msgpax.PackError{reason: reason}}
@@ -209,15 +213,19 @@ defmodule Msgpax do
       {:error, %Msgpax.UnpackError{reason: {:invalid_format, 163}}}
 
   """
-  @spec unpack_slice(iodata, Keyword.t()) :: {:ok, any, binary} | {:error, Msgpax.UnpackError.t()}
+  @spec unpack_slice(iodata, Keyword.t()) ::
+          {:ok, any, binary} | {:error, Msgpax.UnpackError.t() | Exception.t()}
   def unpack_slice(iodata, options \\ []) when is_list(options) do
     try do
       iodata
       |> IO.iodata_to_binary()
-      |> Unpacker.unpack(options)
+      |> Unpacker.Helper.unpack(options)
     catch
       :throw, reason ->
         {:error, %Msgpax.UnpackError{reason: reason}}
+
+      :error, %Protocol.UndefinedError{protocol: Msgpax.Unpacker} = exception ->
+        {:error, exception}
     else
       {value, rest} ->
         {:ok, value, rest}
@@ -266,12 +274,11 @@ defmodule Msgpax do
     * `:binary` - (boolean) if `true`, then binaries are decoded as `Msgpax.Bin`
       structs instead of plain Elixir binaries. Defaults to `false`.
 
-    * `:ext` - (module) a module that implements the `Msgpax.Ext.Unpacker`
-      behaviour. For more information, see the docs for `Msgpax.Ext.Unpacker`.
-
     * `:nonfinite_floats` - (boolean) if `true`, deserializes NaN and ±infinity to
       "signalling" atoms (see the "Data conversion" section), otherwise errors.
       Defaults to `false`.
+
+    Any other options are passed to `Msgpax.Unpacker.unpack/2`.
 
   ## Examples
 
@@ -287,7 +294,8 @@ defmodule Msgpax do
       #Msgpax.Bin<<<3, 18, 122, 27, 115>>>
 
   """
-  @spec unpack(iodata, Keyword.t()) :: {:ok, any} | {:error, Msgpax.UnpackError.t()}
+  @spec unpack(iodata, Keyword.t()) ::
+          {:ok, any} | {:error, Msgpax.UnpackError.t() | Exception.t()}
   def unpack(iodata, options \\ []) do
     case unpack_slice(iodata, options) do
       {:ok, value, <<>>} ->

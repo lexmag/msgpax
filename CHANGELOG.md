@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.0.0 - [TBD]
+  * Added the `Msgpax.Unpacker` protocol.
+  * Refactored how extensions should be packed and unpacked.
+  * Added default extension implementation for `Date`.
+  * Added possibility of overwriting protocols through the use of `Mgpax.Ext.defimpl`.
+
+__Breaking changes:__
+  * Packing and unpacking of extensions changed, as there is no more `Msgpax.Ext` struct. Please refer to `Msgpax.Unpacker` docs for more details and examples.
+  * The `Msgpax.Packer.pack` protocol now expects the `/2` arity to be defined, as the `defimpl` macro no longer introduces a catch-all clause.
+  * `Msgpax.defimpl` has been moved to `Msgpax.Ext.defimpl`.
+  * `Date` now has a default implementation using extension type 101.
+
+## v2.5.0 – [TBD]
+  * Upgraded `Msgpax.Packer` protocol so that the pack function can receive options.
+
+__Breaking changes:__
+
+  * `Msgpax.Packer.pack/1` changed to `Msgpax.Packer.pack/2`, so all protocol
+    implementations should be updated. See `Msgpax.defimpl/3` for examples.
+
 ## v2.4.0 – 2023-05-27
 
   * Dropped support for Elixir versions before 1.6.
