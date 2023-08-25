@@ -31,9 +31,9 @@ defmodule Msgpax.Ext do
   byte `data` repeated `count` times. We could represent this as a `RepByte`
   struct in Elixir:
 
-  defmodule RepByte do
-    defstruct [:data, :count]
-  end
+        defmodule RepByte do
+          defstruct [:data, :count]
+        end
 
   A straightforward (albeit not space-efficient) approach to encoding such data
   is by creating a binary containing `data` repeated for `count` times:
@@ -43,15 +43,15 @@ defmodule Msgpax.Ext do
   inform `Msgpax` how to encode this struct (we'll use `10` as an arbitrary
   integer to identify the type of this extension).
 
-  defimpl Msgpax.Packer, for: RepByte do
-    @rep_byte_ext_type 10
+        defimpl Msgpax.Packer, for: RepByte do
+          @rep_byte_ext_type 10
 
-    def pack(%RepByte{data: byte, count: count}, options) do
-      @rep_byte_ext_type
-      |> Msgpax.Ext.new(String.duplicate(<<byte>>, count))
-      |> Msgpax.Packer.pack(options)
-    end
-  end
+          def pack(%RepByte{data: byte, count: count}, options) do
+            @rep_byte_ext_type
+            |> Msgpax.Ext.new(String.duplicate(<<byte>>, count))
+            |> Msgpax.Packer.pack(options)
+          end
+        end
 
   Note that `Msgpax.Ext.new/2` returns the extension struct `Msgpax.Ext10`,
   which is then packed by `Msgpax.Packer` - all struct extensions already
@@ -59,11 +59,11 @@ defmodule Msgpax.Ext do
 
   Now, we can pack `RepByte`s:
 
-  iex> packed = Msgpax.pack!(%RepByte{data: ?a, count: 3})
-  [[199, 3], 10 | "aaa"]
+        iex> packed = Msgpax.pack!(%RepByte{data: ?a, count: 3})
+        [[199, 3], 10 | "aaa"]
 
-  iex> Msgpax.unpack!(packed)
-  ** (Protocol.UndefinedError) protocol Msgpax.Unpacker not implemented for #Msgpax.Ext10<"aaa"> of type Msgpax.Ext10 (a struct).
+        iex> Msgpax.unpack!(packed)
+        ** (Protocol.UndefinedError) protocol Msgpax.Unpacker not implemented for #Msgpax.Ext10<"aaa"> of type Msgpax.Ext10 (a struct).
 
   ### Unpacking
 
@@ -76,17 +76,17 @@ defmodule Msgpax.Ext do
   `Msgpax.Unpacker` protocol for the extension struct. For our `RepByte` example,
   implementation might look like this:
 
-  defimpl Msgpax.Unpacker, for: Msgpax.Ext10 do
-    def unpack(%{data: <<byte, _rest::binary>>}, _options) do
-      {:ok, %RepByte{data: byte, count: byte_size(data)}}
-    end
-  end
+        defimpl Msgpax.Unpacker, for: Msgpax.Ext10 do
+          def unpack(%{data: <<byte, _rest::binary>>}, _options) do
+            {:ok, %RepByte{data: byte, count: byte_size(data)}}
+          end
+        end
 
   With this in place, we can unpack a packed `RepByte`:
 
-  iex> packed = Msgpax.pack!(%RepByte{data: ?a, count: 3})
-  iex> Msgpax.unpack!(packed)
-  %RepByte{data: ?a, count: 3}
+        iex> packed = Msgpax.pack!(%RepByte{data: ?a, count: 3})
+        iex> Msgpax.unpack!(packed)
+        %RepByte{data: ?a, count: 3}
 
   > #### `use Msgpax.Ext` {: .info}
   >
@@ -174,8 +174,8 @@ defmodule Msgpax.Ext do
 
   This would lead to:
 
-  iex > Date.utc_now() |> Msgpax.pack!() |> Msgpax.unpack!()
-  "A"
+        iex > Date.utc_now() |> Msgpax.pack!() |> Msgpax.unpack!()
+        "A"
 
   """
   defmacro defimpl(protocol, opts, do_block \\ []) do

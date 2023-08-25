@@ -27,7 +27,7 @@ defmodule Msgpax do
   `[foo: "bar"]`                    | map           | `%{"foo" => "bar"}`
   `[1, true]`                       | array         | `[1, true]`
   `#Msgpax.Ext0<"02:12">`⁴          | extension     | `#Msgpax.Ext0<"02:12">`
-  `#Date<2017-12-06>`⁵              | extension     | `#Date<2017-12-06>`
+  `#Date<2017-12-06>`               | extension     | `#Date<2017-12-06>`
   `#DateTime<2017-12-06 00:00:00Z>` | extension     | `#DateTime<2017-12-06 00:00:00Z>`
 
   ¹ `Msgpax.Packer` provides helper functions to facilitate the serialization of natively unsupported data types.
