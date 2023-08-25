@@ -1,5 +1,5 @@
 defmodule Msgpax.PlugParserTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Plug.Test
 
   test "body with a MessagePack-encoded map" do
